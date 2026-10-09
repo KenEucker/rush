@@ -1,1 +1,68 @@
-/* app global css */
+:root {
+  --q-primary: #205747;
+  --q-secondary: #355b70;
+}
+body {
+  background: #f7f9f8;
+  color: #1d302a;
+}
+.page-content {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px;
+}
+.connection-status {
+  background: #e8efeb;
+  color: #263e34;
+  font-size: 0.875rem;
+}
+.navigation-active {
+  color: #164d3d;
+  background: #e4efe9;
+  font-weight: 600;
+  border-left: 4px solid #205747;
+}
+.q-btn {
+  min-height: 44px;
+}
+.q-item {
+  min-height: 48px;
+}
+.account-email {
+  overflow-wrap: anywhere;
+}
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 12px;
+  z-index: 9999;
+  padding: 12px;
+  background: white;
+  color: #164d3d;
+}
+.skip-link:focus {
+  top: 8px;
+}
+a:focus-visible,
+button:focus-visible,
+[tabindex='0']:focus-visible {
+  outline: 3px solid #9d4a09;
+  outline-offset: 3px;
+}
+h1:focus,
+main:focus {
+  outline: none;
+}
+@media (max-width: 599px) {
+  .page-content {
+    padding: 16px;
+  }
+  .q-toolbar__title span {
+    display: none;
+  }
+}
+.q-item__label--caption {
+  color: #52645c;
+  opacity: 1;
+}

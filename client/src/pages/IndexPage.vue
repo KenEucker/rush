@@ -1,88 +1,64 @@
 <template>
-  <q-page class="q-pa-lg">
-    <section class="q-mx-auto" style="max-width: 720px">
-      <h1 class="text-h4">Your RUSH account</h1>
-      <q-banner v-if="error" role="alert" class="bg-red-1 text-negative q-mb-md">{{
-        error
-      }}</q-banner>
-      <q-spinner v-if="loading" aria-label="Checking your session" color="primary" size="2em" />
-      <template v-else-if="session.identity">
-        <p class="text-h6 q-mb-xs">{{ session.identity.user.name }}</p>
-        <p>{{ session.identity.user.email }}</p>
-        <q-list bordered separator class="rounded-borders q-mb-lg">
-          <q-item v-for="membership in session.identity.memberships" :key="membership.id">
-            <q-item-section>
-              <q-item-label>{{ membership.organization.name }}</q-item-label>
-              <q-item-label caption>{{
-                membership.role === 'management' ? 'Management' : 'Ranger'
-              }}</q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
-        <p v-if="!session.identity.memberships.length">
-          You have no active organization membership. Contact Management.
-        </p>
-        <div class="q-gutter-sm">
-          <q-btn
-            v-if="
-              session.identity.memberships.some((membership) => membership.role === 'management')
-            "
-            href="/admin"
-            label="Open administration"
-            color="primary"
-          />
-          <q-btn label="Sign out" outline color="primary" :loading="signingOut" @click="signOut" />
-        </div>
-        <p class="text-caption q-mt-lg">An internet connection is required to sign out.</p>
-      </template>
-      <q-btn v-else-if="error" label="Retry connection" color="primary" @click="load" />
-    </section>
+  <q-page tabindex="-1" class="page-content">
+    <p class="text-overline text-primary">Ranger Unified Scheduling &amp; Hours</p>
+    <h1 class="text-h4 q-mt-sm" tabindex="-1">
+      {{ session.isManagement ? 'Management overview' : 'Ranger overview' }}
+    </h1>
+    <p class="text-body1">Welcome, {{ session.identity?.user.name }}.</p>
+    <q-banner role="note" class="bg-blue-1 q-mb-lg">
+      RUSH is being set up. Scheduling and hours tools are not available yet.
+    </q-banner>
+    <div class="row q-col-gutter-lg">
+      <div class="col-12 col-md-6">
+        <q-card flat bordered class="full-height">
+          <q-card-section>
+            <q-icon name="calendar_month" size="2rem" color="primary" />
+            <h2 class="text-h6">Explore the calendar</h2>
+            <p>Preview date navigation and time controls. No assignments are loaded or saved.</p>
+            <q-btn to="/calendar" label="Open calendar preview" color="primary" no-caps />
+          </q-card-section>
+        </q-card>
+      </div>
+      <div class="col-12 col-md-6">
+        <q-card flat bordered class="full-height">
+          <q-card-section>
+            <q-icon
+              :name="session.isManagement ? 'admin_panel_settings' : 'person'"
+              size="2rem"
+              color="primary"
+            />
+            <h2 class="text-h6">
+              {{ session.isManagement ? 'Management administration' : 'Your account' }}
+            </h2>
+            <p>
+              {{
+                session.isManagement
+                  ? 'Open administration using your current sign-in. An internet connection is required.'
+                  : 'Check your organization membership or sign out of this device.'
+              }}
+            </p>
+            <q-btn
+              v-if="session.isManagement"
+              href="/admin"
+              label="Open administration"
+              color="primary"
+              no-caps
+              :disable="!online"
+            />
+            <q-btn v-else to="/account" label="View your account" color="primary" no-caps />
+          </q-card-section>
+        </q-card>
+      </div>
+    </div>
+    <p v-if="!session.identity?.memberships.length" role="status" class="q-mt-lg">
+      You have no active organization membership. Contact Management.
+    </p>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { ApiError } from '../data/api/session';
 import { useSessionStore } from '../stores/session';
-
+import { useConnectivity } from '../composables/useConnectivity';
 const session = useSessionStore();
-const router = useRouter();
-const loading = ref(true);
-const signingOut = ref(false);
-const error = ref('');
-
-async function load() {
-  loading.value = true;
-  error.value = '';
-  try {
-    await session.refresh();
-    if (!session.identity) await router.replace('/sign-in');
-  } catch (cause) {
-    error.value =
-      cause instanceof ApiError
-        ? cause.message
-        : 'Unable to connect. Check your connection and retry.';
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function signOut() {
-  signingOut.value = true;
-  error.value = '';
-  try {
-    await session.signOut();
-    await router.replace('/sign-in');
-  } catch (cause) {
-    error.value =
-      cause instanceof ApiError
-        ? cause.message
-        : 'Sign-out was not confirmed. Reconnect and try again.';
-  } finally {
-    signingOut.value = false;
-  }
-}
-
-onMounted(load);
+const { online } = useConnectivity();
 </script>
