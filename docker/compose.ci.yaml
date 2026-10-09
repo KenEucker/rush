@@ -1,0 +1,62 @@
+# Disposable full-stack fixture. Always use a separate project name; never production data.
+name: rush-ci
+
+services:
+  caddy:
+    build:
+      context: ..
+      dockerfile: docker/caddy/Dockerfile
+    depends_on:
+      - server
+    environment:
+      RUSH_SITE_ADDRESS: http://:80
+    ports:
+      - "127.0.0.1:9187:80"
+    networks: [web, internal]
+
+  server:
+    build:
+      context: ..
+      dockerfile: docker/server/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_NAME: RUSH
+      # Keep real CSRF middleware enabled (Laravel skips it under 'testing').
+      APP_ENV: local
+      APP_DEBUG: "false"
+      APP_KEY: base64:4JgDPkNG6PpRLCpJvf4n3uGRrjkk+ySOGFbqVDJcX8k=
+      APP_URL: http://127.0.0.1:9187
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: rush_ci
+      DB_USERNAME: rush_ci
+      DB_PASSWORD: disposable-ci-only
+      SESSION_DRIVER: database
+      SESSION_SECURE_COOKIE: "false"
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      LOG_CHANNEL: stderr
+    networks: [internal]
+
+  postgres:
+    image: postgres:17.2-alpine3.21
+    environment:
+      POSTGRES_DB: rush_ci
+      POSTGRES_USER: rush_ci
+      POSTGRES_PASSWORD: disposable-ci-only
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rush_ci -d rush_ci"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    networks: [internal]
+
+networks:
+  web:
+  internal:
+    internal: true

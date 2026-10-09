@@ -125,6 +125,20 @@ There is no new durable Client workflow; RUSH-008–014 retain the offline gate 
 all nine functional scenarios retain their owners below. Review and merge are
 still required for task completion.
 
+### RUSH-007 implementation evidence
+
+RUSH-001–006 are merged prerequisites on `production`. RUSH-007 implements
+Technical §13 through clean-checkout GitHub Actions jobs for Pest/PostgreSQL,
+migration rollback/reapplication, Vitest, lint/type checks, SPA/PWA builds,
+Playwright shell and real-session integration tests, and PR/commit conventions.
+The full-stack suite authenticates both roles through Caddy, checks Orchid and
+private profile authorization, rejects missing CSRF, and verifies logout/account
+isolation. This provides cross-cutting regression support for R-01–R-38 without
+claiming their operational behavior complete. See [ADR 0007](decisions/0007-ci-and-e2e-foundation.md),
+[test reproduction](testing.md), and [verification evidence](evidence/RUSH-007/README.md).
+No nine-scenario owner changes; the Milestone 2 offline gate remains mandatory.
+Task and Milestone 1 completion still require human review and merge.
+
 ## 4. Milestone 2 — Offline infrastructure (RUSH-008–014)
 
 **Deliverable:** The initial *offline unavailability proof* from Technical §14 succeeds before the rest of the scheduling Client is built.

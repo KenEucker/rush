@@ -77,7 +77,7 @@ In production, both are served from one origin: the Client at `/`, Orchid at `/a
 
 ## Project status
 
-**Status: RUSH-004 session authentication and policies implemented; pending review.**
+**Status: RUSH-001–006 merged; RUSH-007 CI and E2E foundation implemented, pending review.**
 
 RUSH V1 is defined by **38 functional requirements** and **nine acceptance scenarios**. The [V1 implementation plan](docs/RUSH_V1_Implementation_Plan.md) organizes the work into **seven milestones and 49 development tasks**, with testable acceptance criteria, requirement traceability, and a target release of `v1.0.0`.
 
@@ -98,8 +98,8 @@ cp server/.env.example server/.env
 touch server/database/database.sqlite
 php server/artisan key:generate
 php server/artisan migrate --force
-npm install --prefix client
-npm install --prefix client/src-pwa
+npm ci --prefix client
+npm ci --prefix client/src-pwa
 ```
 
 Useful checks:
@@ -108,10 +108,15 @@ Useful checks:
 npm run server:test
 npm run server:format
 npm run client:lint
+npm run client:typecheck
 npm run client:test
 npm run client:build
 npm run client:build:pwa
 ```
+
+The [testing guide](docs/testing.md) covers clean-checkout dependencies, disposable
+PostgreSQL and full-stack Playwright runs, CI reports, and commit/PR validation.
+CI checks PRs targeting `production` and `main`; human review is required to merge.
 
 ### Compose routing
 
