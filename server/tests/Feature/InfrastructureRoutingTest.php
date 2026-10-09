@@ -1,5 +1,6 @@
 <?php
 
+use Composer\Semver\Semver;
 use Illuminate\Support\Facades\Route;
 
 function rush_project_path(string $path): string
@@ -45,6 +46,27 @@ it('registers the versioned API prefix for same-origin routing', function () {
     );
 
     expect($hasVersionedApiRoute)->toBeTrue();
+});
+
+it('pins a PHP runtime compatible with the locked production dependencies', function () {
+    $dockerfile = file_get_contents(rush_project_path('docker/server/Dockerfile'));
+    $lock = json_decode(file_get_contents(base_path('composer.lock')), true, flags: JSON_THROW_ON_ERROR);
+
+    expect(preg_match('/^FROM php:(\d+\.\d+\.\d+)-fpm\S* AS runtime\r?$/m', $dockerfile, $matches))
+        ->toBe(1, 'The production PHP runtime must use a pinned version.');
+
+    $constraints = ['root' => $lock['platform']['php']];
+
+    foreach ($lock['packages'] as $package) {
+        if (isset($package['require']['php'])) {
+            $constraints[$package['name']] = $package['require']['php'];
+        }
+    }
+
+    foreach ($constraints as $package => $constraint) {
+        expect(Semver::satisfies($matches[1], $constraint))
+            ->toBeTrue("Docker PHP {$matches[1]} does not satisfy {$package}: {$constraint}");
+    }
 });
 
 it('keeps PostgreSQL private behind Caddy and the Server', function () {

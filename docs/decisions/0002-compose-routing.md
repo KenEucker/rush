@@ -23,6 +23,12 @@ at `/admin`, the Laravel API at `/api/v1/*`, and PostgreSQL kept off the public 
   authentication/session endpoints to Laravel before applying the Client fallback.
 - Add a minimal `/api/v1/health` endpoint to prove the versioned API prefix and Caddy routing
   target without implementing domain APIs early.
+- Pin PHP-FPM to PHP 8.4.26 because the locked production dependencies require PHP 8.4.1
+  or newer. Check production platform requirements and boot Artisan in the final runtime
+  during every image build; passing Composer installation in the separate vendor stage
+  does not prove compatibility with the deployed PHP runtime.
+- Load Composer's autoloader in the Server health check so an incompatible runtime
+  cannot report healthy merely because its PostgreSQL extension is present.
 
 ## Consequences
 

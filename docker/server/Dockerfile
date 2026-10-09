@@ -18,7 +18,7 @@ COPY server ./
 
 RUN composer dump-autoload --optimize --no-interaction
 
-FROM php:8.3.14-fpm-alpine3.20 AS runtime
+FROM php:8.4.26-fpm-alpine3.23 AS runtime
 
 WORKDIR /var/www/html
 
@@ -30,6 +30,11 @@ RUN apk add --no-cache icu-libs libpq libzip oniguruma \
 COPY docker/server/php.ini /usr/local/etc/php/conf.d/rush.ini
 COPY docker/server/entrypoint.sh /usr/local/bin/rush-entrypoint
 COPY --from=vendor --chown=www-data:www-data /app /var/www/html
+
+# Validate the final PHP runtime, not just the separate Composer build image.
+RUN --mount=type=bind,from=vendor,source=/usr/bin/composer,target=/tmp/composer \
+    php /tmp/composer check-platform-reqs --no-dev \
+    && php artisan --version
 
 RUN chmod +x /usr/local/bin/rush-entrypoint \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \

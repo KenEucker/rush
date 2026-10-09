@@ -120,7 +120,8 @@ RUSH-002 adds a production-style Compose environment. Create a root `.env` from
 the single-origin stack:
 
 ```sh
-docker compose up --build
+docker compose up -d --build
+docker compose exec server php artisan migrate --force
 ```
 
 By default Caddy publishes ports `80` and `443`, serves the built Client at `/`, forwards
@@ -128,6 +129,14 @@ Laravel and Orchid paths such as `/admin`, `/api/v1/*`, `/vendor/orchid/*`, and 
 Server, and keeps PostgreSQL on an internal Docker network with no public database port.
 For local smoke tests without privileged ports, set `RUSH_HTTP_PORT=8080` and
 `RUSH_HTTPS_PORT=8443` in the root `.env`.
+
+The Server image uses PHP 8.4 and verifies the locked production dependencies against
+the final runtime during its build. After a Server Dockerfile update, rebuild and recreate
+the running container (restarting an existing container does not update its image):
+
+```sh
+docker compose up -d --build --no-deps server
+```
 
 ### Implementation roadmap
 
