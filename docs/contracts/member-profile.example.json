@@ -1,0 +1,20 @@
+{
+  "profile": {
+    "id": "01920000-0000-7000-8000-000000000001",
+    "organization_id": "01920000-0000-7000-8000-000000000002",
+    "display_name": "Casey Ranger",
+    "phone": null,
+    "revision": 1,
+    "updated_at": "2026-10-09T12:00:00.000000Z"
+  },
+  "update": {
+    "expected_revision": 1,
+    "display_name": "Casey Updated",
+    "phone": "555-0100"
+  },
+  "conflict": {
+    "code": "revision_conflict",
+    "message": "This record has changed. Reload it and review your changes before retrying.",
+    "errors": {}
+  }
+}

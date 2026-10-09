@@ -109,6 +109,22 @@ No operational workflow or acceptance scenario is claimed complete; the nine
 scenario owners below and the Milestone 2 offline gate are unchanged.
 Implementation completion still requires PR review and merge.
 
+### RUSH-006 implementation evidence
+
+RUSH-001–005 are merged prerequisites on `production`. RUSH-006 documents entity,
+revision, state-transition, typed API, validation/error and audit conventions
+(Technical §§5, 14; cross-cutting support for R-01–R-38). The existing owner-only
+profile endpoint proves revision-checked transactional changes, actor-attributed
+audit history, shared service authorization/validation, explicit resources and
+typed Client transport. See [ADR 0006](decisions/0006-domain-contract-conventions.md),
+[profile contract](contracts/member-profile.md), and
+[verification evidence](evidence/RUSH-006/README.md).
+Tests: `server/tests/Feature/ProfileContractTest.php`, existing identity/session
+regressions, and `client/src/data/api/profiles.test.ts` with a shared contract example.
+There is no new durable Client workflow; RUSH-008–014 retain the offline gate and
+all nine functional scenarios retain their owners below. Review and merge are
+still required for task completion.
+
 ## 4. Milestone 2 — Offline infrastructure (RUSH-008–014)
 
 **Deliverable:** The initial *offline unavailability proof* from Technical §14 succeeds before the rest of the scheduling Client is built.

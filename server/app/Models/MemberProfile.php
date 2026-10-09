@@ -22,6 +22,11 @@ class MemberProfile extends Model
         'phone',
     ];
 
+    protected function casts(): array
+    {
+        return ['revision' => 'integer'];
+    }
+
     /**
      * @return BelongsTo<Organization, $this>
      */

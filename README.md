@@ -161,6 +161,12 @@ for the contract and follow-on offline account safeguards.
 
 ### Implementation roadmap
 
+Domain services, revision checks, state transitions, API contracts, errors and
+transactional audit conventions are documented in
+[ADR 0006](docs/decisions/0006-domain-contract-conventions.md). The
+[member-profile contract](docs/contracts/member-profile.md) is the tested proof;
+profile PATCH requests require the revision returned by GET.
+
 Each milestone contains seven bounded tasks and ends with a working, verifiable result. Refer to the [implementation plan](docs/RUSH_V1_Implementation_Plan.md) for task IDs, dependencies, completion criteria, and mandatory acceptance tests.
 
 1. **Foundation:** Repository, Docker, authentication, Server, Client, and PWA setup.
