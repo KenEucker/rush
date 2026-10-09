@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OrganizationRole;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Orchid\Filters\Types\Like;
@@ -11,6 +12,13 @@ use Orchid\Platform\Models\User as Authenticatable;
 
 class User extends Authenticatable
 {
+    public function hasAccess(string $permit, bool $cache = true): bool
+    {
+        return $permit === 'platform.index' && $this->organizationMemberships()
+            ->where('is_active', true)
+            ->where('role', OrganizationRole::Management)->exists();
+    }
+
     /**
      * The attributes that are mass assignable.
      *

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ManagementAccess;
 use App\Orchid\PlatformProvider;
 use Orchid\Attachment\Engines\Generator;
 use Orchid\Support\BootstrapIconsPath;
@@ -49,8 +50,8 @@ return [
      */
 
     'middleware' => [
-        'public' => ['web', 'cache.headers:private;must_revalidate;etag'],
-        'private' => ['web', 'platform', 'cache.headers:private;must_revalidate;etag'],
+        'public' => ['web'],
+        'private' => ['web', 'auth', ManagementAccess::class, 'platform'],
     ],
 
     /*
@@ -88,7 +89,7 @@ return [
      |
      */
 
-    'auth' => true,
+    'auth' => false,
 
     /*
      |--------------------------------------------------------------------------
@@ -115,7 +116,7 @@ return [
      |
      */
 
-    'profile' => 'platform.profile',
+    'profile' => 'platform.main',
 
     /*
      |--------------------------------------------------------------------------
@@ -225,7 +226,7 @@ return [
      */
 
     'notifications' => [
-        'enabled' => true,
+        'enabled' => false,
         'interval' => 60,
     ],
 
@@ -264,8 +265,8 @@ return [
      */
 
     'turbo' => [
-        'cache' => true,
-        'prefetch' => true,
+        'cache' => false,
+        'prefetch' => false,
         'refresh-method' => 'replace',
         'refresh-scroll' => 'preserve',
     ],
