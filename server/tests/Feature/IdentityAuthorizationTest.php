@@ -15,8 +15,9 @@ it('permits own profile reads and validated writes without mass assignment of pr
     $this->getJson($url)->assertUnauthorized();
     $this->patchJson($url, ['display_name' => 'Guest'])->assertUnauthorized();
     $this->actingAs($user)->getJson($url)->assertOk()->assertJsonPath('id', $profile->id);
-    $this->patchJson($url, ['display_name' => 'Updated', 'phone' => '555-0100', 'role' => 'management', 'organization_id' => 'forged'])
-        ->assertOk()->assertExactJson(['id' => $profile->id, 'display_name' => 'Updated', 'phone' => '555-0100']);
+    $this->patchJson($url, ['expected_revision' => 1, 'display_name' => 'Updated', 'phone' => '555-0100', 'role' => 'management', 'organization_id' => 'forged'])
+        ->assertOk()->assertJsonPath('id', $profile->id)->assertJsonPath('display_name', 'Updated')
+        ->assertJsonPath('phone', '555-0100')->assertJsonPath('revision', 2);
     expect($profile->fresh()->organization_id)->toBe($profile->organization_id)
         ->and($profile->membership->fresh()->role->value)->toBe('ranger');
     $this->patchJson($url, ['display_name' => '', 'phone' => str_repeat('x', 51)])

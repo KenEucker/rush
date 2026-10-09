@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\ApiErrors;
 use App\Http\Middleware\PrivateResponses;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(PrivateResponses::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->respond(ApiErrors::respond(...));
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
