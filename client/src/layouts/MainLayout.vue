@@ -83,12 +83,16 @@
               : 'Reconnect to access your account and administration.'
           }}
         </div>
+        <PwaHelp v-if="isPwa" />
         <q-page tabindex="-1" v-if="loading" class="q-pa-lg" aria-busy="true">
           <q-spinner aria-label="Checking your session" color="primary" size="2em" />
           <p role="status">Checking your session…</p>
         </q-page>
         <q-page tabindex="-1" v-else-if="error" class="q-pa-lg">
-          <h1 class="text-h4" tabindex="-1">Connection needed</h1>
+          <h1 class="text-h4" tabindex="-1">
+            {{ online ? 'Connection needed' : 'RUSH is offline' }}
+          </h1>
+          <p v-if="!online">Reconnect to verify your account and continue.</p>
           <q-banner role="alert" class="bg-red-1 text-negative q-mb-md">{{ error }}</q-banner>
           <q-btn label="Retry connection" color="primary" @click="loadSession" />
         </q-page>
@@ -105,6 +109,9 @@ import { useRoute, useRouter } from 'vue-router';
 import { ApiError } from '../data/api/session';
 import { useSessionStore } from '../stores/session';
 import { useConnectivity } from '../composables/useConnectivity';
+import PwaHelp from '../components/PwaHelp.vue';
+
+const isPwa = import.meta.env.QUASAR_MODE === 'pwa';
 
 const session = useSessionStore();
 const route = useRoute();

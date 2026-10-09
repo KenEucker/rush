@@ -2,6 +2,11 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
 import { defineConfig } from '#q-app';
+import {
+  precacheAssets,
+  shellNavigationAllowlist,
+  serverNavigationDenylist,
+} from './src/pwa/cachePolicy';
 
 export default defineConfig((/* ctx */) => {
   return {
@@ -188,13 +193,24 @@ export default defineConfig((/* ctx */) => {
       // useCredentialsForManifestTag: true,
       // injectPWAMetaTags: false,
       // extendPWACustomSWConf (rolldownConf) {},
+      injectPWAMetaTags: () =>
+        [
+          '<meta name="theme-color" content="#205747">',
+          '<meta name="mobile-web-app-capable" content="yes">',
+          '<meta name="apple-mobile-web-app-capable" content="yes">',
+          '<meta name="apple-mobile-web-app-title" content="RUSH">',
+          '<meta name="apple-mobile-web-app-status-bar-style" content="default">',
+        ].join(''),
       extendPWAGenerateSWOptions(cfg) {
+        cfg.globPatterns = precacheAssets;
+        cfg.runtimeCaching = [];
+        cfg.skipWaiting = false;
+        cfg.clientsClaim = true;
+        cfg.cleanupOutdatedCaches = true;
+        cfg.navigateFallbackAllowlist = shellNavigationAllowlist;
         cfg.navigateFallbackDenylist = [
-          /^\/api\//,
-          /^\/admin(?:\/|$)/,
-          /^\/sanctum\//,
-          /^\/login$/,
-          /^\/logout$/,
+          ...(cfg.navigateFallbackDenylist ?? []),
+          ...serverNavigationDenylist,
         ];
       },
       // extendPWAInjectManifestOptions (cfg) {},

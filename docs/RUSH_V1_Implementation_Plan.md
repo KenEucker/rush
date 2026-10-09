@@ -204,6 +204,23 @@ all nine acceptance scenario owners are unchanged. RUSH-011–014 retain PWA sta
 availability, account-security UX, observability and the mandatory offline gate.
 Human review and merge remain required for task completion.
 
+### RUSH-011 implementation evidence
+
+RUSH-001–010 are merged prerequisites on production. RUSH-011 implements
+Technical §§7.6, 13's production PWA shell: explicit asset-only Workbox precaching,
+Client-route navigation fallback, RUSH install metadata/help, offline startup
+guidance and updates that wait for open tabs to close. Authenticated mutable data
+remains exclusively in Dexie; session verification still fails closed.
+See [ADR 0011](decisions/0011-pwa-offline-shell.md),
+[installation guide](pwa.md), and [test evidence](evidence/RUSH-011/README.md).
+Vitest covers cache boundaries/lifecycle; real production-stack desktop/mobile
+tests verify installability, offline reload/reopen/browser restart without HTTP
+cache, API cache isolation and safe worker updates. Native OS installation remains
+a manual device check. This supports R-01–R-38 across the application without
+changing any of the nine scenario owners. RUSH-012–014 retain availability,
+account-security, observability and the mandatory conflicting-assignment proof.
+Human review and merge remain required for task completion.
+
 ## 5. Milestone 3 — Scheduling configuration (RUSH-015–021)
 
 **Deliverable:** Management can configure every season scheduling input, while Rangers maintain default and weekly availability/preferences.
