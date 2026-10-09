@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches: [main, production]
+  pull_request:
+    branches: [main, production]
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conventions:
+    name: Git conventions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.16.0'
+      - run: npm run conventions:test
+      - name: Validate PR title, body and task commits
+        if: github.event_name == 'pull_request'
+        run: node scripts/lint-conventions.mjs --event "$GITHUB_EVENT_PATH"
+
+  server:
+    name: Server (Pest, PostgreSQL, migrations, Pint)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.2-alpine3.21
+        env:
+          POSTGRES_DB: rush_test
+          POSTGRES_USER: rush_test
+          POSTGRES_PASSWORD: disposable-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U rush_test -d rush_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:4JgDPkNG6PpRLCpJvf4n3uGRrjkk+ySOGFbqVDJcX8k=
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: rush_test
+      DB_USERNAME: rush_test
+      DB_PASSWORD: disposable-ci-only
+      DB_URL: ''
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, intl, bcmath, pdo_pgsql, pdo_sqlite, zip
+          coverage: none
+          tools: composer:2
+      - run: composer validate --working-dir=server --strict
+      - run: composer install --working-dir=server --no-interaction --prefer-dist --no-progress
+      - run: composer --working-dir=server format:check
+      - name: Verify fresh migrations, rollback and reapplication
+        run: |
+          php server/artisan migrate --force
+          php server/artisan migrate:rollback --force
+          php server/artisan migrate --force
+      - run: composer --working-dir=server test -- --compact --log-junit storage/logs/pest.xml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: server-results
+          path: server/storage/logs/
+          retention-days: 7
+
+  client:
+    name: Client (Vitest, lint, types, SPA/PWA, shell)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.16.0'
+          cache: npm
+          cache-dependency-path: |
+            client/package-lock.json
+            client/src-pwa/package-lock.json
+      - run: npm ci --prefix client
+      - run: npm ci --prefix client/src-pwa
+      - run: npm --prefix client run lint:check
+      - run: npm --prefix client run typecheck
+      - run: npm --prefix client run test:unit
+      - run: npm --prefix client run build
+      - run: npm --prefix client run build:pwa
+      - run: npx --prefix client playwright install --with-deps chromium
+      - run: npm --prefix client run test:shell
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: shell-results
+          path: |
+            client/playwright-report/
+            client/test-results/
+          retention-days: 7
+
+  integration:
+    name: E2E (Caddy, Laravel, PostgreSQL, built PWA)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.16.0'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci --prefix client
+      - run: npx --prefix client playwright install --with-deps chromium
+      - name: Build isolated stack from the production Dockerfiles
+        run: docker compose -p rush-ci -f docker/compose.ci.yaml up -d --build --wait --wait-timeout 120
+      - name: Migrate and seed disposable browser fixture
+        run: |
+          docker compose -p rush-ci -f docker/compose.ci.yaml exec -T server php artisan migrate --force
+          docker compose -p rush-ci -f docker/compose.ci.yaml exec -T server php artisan db:seed --force
+          curl --fail --retry 10 --retry-all-errors --retry-delay 2 http://127.0.0.1:9187/api/v1/health
+      - run: npm --prefix client run test:e2e
+      - name: Collect stack diagnostics
+        if: always()
+        run: |
+          mkdir -p artifacts
+          docker compose -p rush-ci -f docker/compose.ci.yaml ps -a > artifacts/compose-status.txt
+          docker compose -p rush-ci -f docker/compose.ci.yaml logs --no-color > artifacts/compose.log 2>&1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: integration-results
+          path: |
+            client/playwright-report/
+            client/test-results/
+            artifacts/
+          retention-days: 7
+      - name: Remove only the disposable CI stack
+        if: always()
+        run: docker compose -p rush-ci -f docker/compose.ci.yaml down --volumes --remove-orphans

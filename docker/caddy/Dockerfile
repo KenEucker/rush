@@ -11,6 +11,7 @@ RUN npm ci --ignore-scripts \
     && npm --prefix src-pwa ci --ignore-scripts
 
 COPY client ./
+COPY docs/contracts /workspace/docs/contracts
 
 RUN npm run postinstall \
     && npm run build:pwa

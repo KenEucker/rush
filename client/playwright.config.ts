@@ -1,7 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
-// Focused shell suite. RUSH-007 owns full-stack CI/browser infrastructure.
+// Fast, isolated UI checks. Real Server sessions use playwright.integration.config.ts.
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: '**/integration/**',
+  forbidOnly: !!process.env.CI,
+  workers: process.env.CI ? 1 : '50%',
+  retries: 0,
+  reporter: [['list'], ['html', { outputFolder: 'playwright-report/shell', open: 'never' }]],
+  outputDir: 'test-results/shell',
   fullyParallel: true,
   use: { baseURL: 'http://127.0.0.1:9105', trace: 'retain-on-failure' },
   projects: [

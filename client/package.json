@@ -8,14 +8,15 @@
   "private": true,
   "scripts": {
     "lint": "prettier --write \"**/*.{js,ts,vue,css,html,md,json}\" --ignore-path .gitignore && eslint --fix -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\"",
-    "lint:check": "prettier --check \"**/*.{js,ts,vue,css,html,md,json}\" --ignore-path .gitignore && eslint -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\"",
+    "lint:check": "prettier --check \"**/*.{js,ts,vue,css,html,md,json}\" --ignore-path .gitignore && eslint -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\" \"./e2e/**/*.ts\" \"./playwright*.ts\"",
     "dev": "quasar dev",
     "build": "quasar build",
     "build:pwa": "quasar build -m pwa",
     "test:unit": "vitest run src",
     "typecheck": "vue-tsc --noEmit",
     "postinstall": "quasar prepare --silent",
-    "test:shell": "playwright test"
+    "test:shell": "playwright test",
+    "test:e2e": "playwright test --config playwright.integration.config.ts"
   },
   "dependencies": {
     "@quasar/extras": "^2.1.0",

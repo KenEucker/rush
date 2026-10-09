@@ -4,10 +4,14 @@
   "private": true,
   "description": "Ranger Unified Scheduling & Hours monorepo",
   "scripts": {
+    "conventions:lint": "node scripts/lint-conventions.mjs",
+    "conventions:test": "node --test scripts/*.test.mjs",
     "client:build": "npm --prefix client run build",
     "client:build:pwa": "npm --prefix client run build:pwa",
     "client:lint": "npm --prefix client run lint:check",
     "client:test": "npm --prefix client run test:unit",
+    "client:typecheck": "npm --prefix client run typecheck",
+    "client:test:e2e": "npm --prefix client run test:e2e",
     "server:format": "composer --working-dir=server format:check",
     "server:test": "composer --working-dir=server test"
   }

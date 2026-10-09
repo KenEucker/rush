@@ -1,0 +1,105 @@
+# Testing RUSH
+
+RUSH-007 implements Technical §13 and cross-cutting regression support for
+R-01–R-38. CI is defined in `.github/workflows/ci.yml`; the fixture and scope are
+documented in [ADR 0007](decisions/0007-ci-and-e2e-foundation.md).
+
+## Clean checkout
+
+Use Node 24.16.0, PHP 8.5 with the extensions listed in CI, Composer 2, Git and
+Docker Compose. Install locked dependencies from the repository root:
+
+```sh
+composer install --working-dir=server --no-interaction --prefer-dist
+npm ci --prefix client
+npm ci --prefix client/src-pwa
+npx --prefix client playwright install chromium
+```
+
+On Linux, install browser OS dependencies with
+`npx --prefix client playwright install --with-deps chromium`.
+No local `.env` or pre-existing database is required for the test suites.
+
+```sh
+npm run conventions:test
+composer validate --working-dir=server --strict
+npm run server:format
+npm run server:test
+npm run client:lint
+npm run client:typecheck
+npm run client:test
+npm run client:build
+npm run client:build:pwa
+npm --prefix client run test:shell
+```
+
+Pest defaults to in-memory SQLite. CI overrides `DB_CONNECTION`, `DB_HOST`,
+`DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` and clears `DB_URL` to run
+against PostgreSQL 17.2. Set these only to a disposable test database: Pest resets
+its target schema. Against that database, CI also runs `php server/artisan migrate
+--force`, `migrate:rollback --force`, and `migrate --force` before Pest. It stores
+JUnit output with `composer --working-dir=server test -- --compact --log-junit
+storage/logs/pest.xml`.
+
+## Full-stack browser tests
+
+The standalone fixture below never uses `compose.yaml` or its production volumes.
+It builds the production PWA and Laravel images, serves Caddy on loopback port
+9187, and creates temporary PostgreSQL storage. Do not reuse it for real data.
+Run from the repository root:
+
+```sh
+docker compose -p rush-ci -f docker/compose.ci.yaml up -d --build --wait --wait-timeout 120
+docker compose -p rush-ci -f docker/compose.ci.yaml exec -T server php artisan migrate --force
+docker compose -p rush-ci -f docker/compose.ci.yaml exec -T server php artisan db:seed --force
+npm run client:test:e2e
+docker compose -p rush-ci -f docker/compose.ci.yaml down --volumes --remove-orphans
+```
+
+Always run the final cleanup, even if a command fails. To rerun tests immediately
+against the same disposable fixture, clear its login counters with `docker compose
+-p rush-ci -f docker/compose.ci.yaml exec -T server php artisan cache:clear`.
+The real limiter remains enabled during each test run.
+
+The suite asserts real Ranger/Management login, authorization differences,
+same-origin Orchid and its stylesheet, CSRF rejection, private profile access,
+owner-only writes, sign-out and account switching on desktop/mobile Chromium.
+It complements `test:shell`, which uses the built SPA and mocked session responses.
+Offline reconciliation and installed-PWA proof remain Milestone 2 work.
+
+## PR and commit checks
+
+Fill every section of `.github/pull_request_template.md`. Use a Conventional Commit
+PR title (for example `ci(foundation): add RUSH-007 CI and E2E checks`). Task commits
+must follow Implementation Plan §2, including rationale and `Refs:`,
+`Requirements:` and `Tests:` footers. Infrastructure work can identify R-01–R-38
+as cross-cutting support and name its technical sections without claiming those
+functional requirements complete.
+
+```sh
+node scripts/lint-conventions.mjs --commit-file commit-message.txt
+node scripts/lint-conventions.mjs --range origin/production HEAD
+```
+
+CI reads PR metadata from the event JSON and validates non-merge task commits.
+The validator tests include malformed metadata, missing sections/footers,
+breaking changes, historical-commit exclusion and safe handling of literal shell
+syntax. Human review must verify the quality and truthfulness of the content.
+
+## CI diagnostics and merge gate
+
+Require these four status checks on the target branch:
+
+- Git conventions
+- Server (Pest, PostgreSQL, migrations, Pint)
+- Client (Vitest, lint, types, SPA/PWA, shell)
+- E2E (Caddy, Laravel, PostgreSQL, built PWA)
+
+GitHub Actions uploads `server-results`, `shell-results` and `integration-results`
+for seven days, including Playwright HTML reports and failure traces/screenshots,
+Pest JUnit/logs, and Compose status/logs. Locally, reports are under
+`client/playwright-report/` and `client/test-results/`; use
+`npx --prefix client playwright show-report client/playwright-report/integration`.
+Never commit reports containing session cookies. There are no automatic retries;
+fix the cause of a failing check. Branch protection and human review remain
+repository-admin responsibilities, and no workflow deploys or merges code.
