@@ -77,14 +77,15 @@ In production, both are served from one origin: the Client at `/`, Orchid at `/a
 
 ## Project status
 
-**Status: RUSH-001 foundation bootstrap in progress.**
+**Status: RUSH-002 compose and routing implemented.**
 
 RUSH V1 is defined by **38 functional requirements** and **nine acceptance scenarios**. The [V1 implementation plan](docs/RUSH_V1_Implementation_Plan.md) organizes the work into **seven milestones and 49 development tasks**, with testable acceptance criteria, requirement traceability, and a target release of `v1.0.0`.
 
-The repository now contains the initial `server/` Laravel/Orchid application and the
-`client/` Quasar/Vue/TypeScript application shell. Docker, PostgreSQL, Caddy routing,
-authentication, domain models, synchronization, and deployment hardening are assigned to
-later tasks in the implementation plan.
+The repository now contains the initial `server/` Laravel/Orchid application, the
+`client/` Quasar/Vue/TypeScript application shell, and the production-style Docker Compose
+entry point for Caddy, PHP-FPM, and private PostgreSQL routing. Authentication, domain
+models, synchronization, and deployment hardening are assigned to later tasks in the
+implementation plan.
 
 ### Bootstrap commands
 
@@ -110,6 +111,31 @@ npm run client:lint
 npm run client:test
 npm run client:build
 npm run client:build:pwa
+```
+
+### Compose routing
+
+RUSH-002 adds a production-style Compose environment. Create a root `.env` from
+`.env.example`, set `APP_KEY` and a non-default `POSTGRES_PASSWORD`, then build and start
+the single-origin stack:
+
+```sh
+docker compose up -d --build
+docker compose exec server php artisan migrate --force
+```
+
+By default Caddy publishes ports `80` and `443`, serves the built Client at `/`, forwards
+Laravel and Orchid paths such as `/admin`, `/api/v1/*`, `/vendor/orchid/*`, and `/up` to the
+Server, and keeps PostgreSQL on an internal Docker network with no public database port.
+For local smoke tests without privileged ports, set `RUSH_HTTP_PORT=8080` and
+`RUSH_HTTPS_PORT=8443` in the root `.env`.
+
+The Server image uses PHP 8.4 and verifies the locked production dependencies against
+the final runtime during its build. After a Server Dockerfile update, rebuild and recreate
+the running container (restarting an existing container does not update its image):
+
+```sh
+docker compose up -d --build --no-deps server
 ```
 
 ### Implementation roadmap

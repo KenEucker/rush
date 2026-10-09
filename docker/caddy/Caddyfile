@@ -1,0 +1,26 @@
+{$RUSH_SITE_ADDRESS:https://localhost} {
+	encode zstd gzip
+
+	header {
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Content-Type-Options "nosniff"
+	}
+
+	@laravel path /admin* /api/v1* /up /vendor/orchid* /build* /storage* /login* /logout* /csrf-cookie /sanctum*
+
+	handle @laravel {
+		root * /var/www/html/public
+		php_fastcgi server:9000
+		file_server
+	}
+
+	handle /index.php* {
+		respond "Not Found" 404
+	}
+
+	handle {
+		root * /srv/client
+		try_files {path} {path}/ /index.html
+		file_server
+	}
+}
