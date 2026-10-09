@@ -60,8 +60,8 @@ it('gives seeded Management accounts access to the Orchid admin shell', function
     $ranger = User::query()->where('email', 'casey.ranger@example.com')->sole();
 
     expect($management->hasAccess('platform.index'))->toBeTrue()
-        ->and($management->hasAccess('platform.systems.users'))->toBeTrue()
-        ->and($management->hasAccess('platform.systems.roles'))->toBeTrue()
+        ->and($management->hasAccess('platform.systems.users'))->toBeFalse()
+        ->and($management->hasAccess('platform.systems.roles'))->toBeFalse()
         ->and($ranger->hasAccess('platform.index'))->toBeFalse()
         ->and($ranger->hasAccess('platform.systems.users'))->toBeFalse()
         ->and($ranger->hasAccess('platform.systems.roles'))->toBeFalse();

@@ -82,6 +82,14 @@ export default defineConfig((/* ctx */) => {
       // vueDevtools: true,
       // https: true,
       open: false,
+      proxy: {
+        '/api': { target: 'http://127.0.0.1:8000' },
+        '/sanctum': { target: 'http://127.0.0.1:8000' },
+        '/login': { target: 'http://127.0.0.1:8000' },
+        '/logout': { target: 'http://127.0.0.1:8000' },
+        '/admin': { target: 'http://127.0.0.1:8000' },
+        '/vendor/orchid': { target: 'http://127.0.0.1:8000' },
+      },
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
@@ -180,7 +188,15 @@ export default defineConfig((/* ctx */) => {
       // useCredentialsForManifestTag: true,
       // injectPWAMetaTags: false,
       // extendPWACustomSWConf (rolldownConf) {},
-      // extendPWAGenerateSWOptions (cfg) {},
+      extendPWAGenerateSWOptions(cfg) {
+        cfg.navigateFallbackDenylist = [
+          /^\/api\//,
+          /^\/admin(?:\/|$)/,
+          /^\/sanctum\//,
+          /^\/login$/,
+          /^\/logout$/,
+        ];
+      },
       // extendPWAInjectManifestOptions (cfg) {},
       // extendPWASwTsConfig (tsConfig) {}
     },

@@ -1,67 +1,88 @@
 <template>
-  <q-page class="foundation-page q-pa-lg">
-    <section class="foundation-page__content">
-      <p class="text-overline text-primary q-mb-sm">Ranger Unified Scheduling &amp; Hours</p>
-      <h1 class="text-h3 text-weight-bold q-my-none">RUSH foundation</h1>
-      <p class="text-body1 text-grey-8 q-mt-md q-mb-xl">
-        The Quasar client is ready for the Ranger and Management workflows that follow in Milestone
-        1.
-      </p>
-
-      <div class="row q-col-gutter-md">
-        <div v-for="item in foundationItems" :key="item.label" class="col-12 col-sm-4">
-          <q-item class="foundation-page__item">
-            <q-item-section avatar>
-              <q-icon :name="item.icon" color="primary" size="sm" />
-            </q-item-section>
+  <q-page class="q-pa-lg">
+    <section class="q-mx-auto" style="max-width: 720px">
+      <h1 class="text-h4">Your RUSH account</h1>
+      <q-banner v-if="error" role="alert" class="bg-red-1 text-negative q-mb-md">{{
+        error
+      }}</q-banner>
+      <q-spinner v-if="loading" aria-label="Checking your session" color="primary" size="2em" />
+      <template v-else-if="session.identity">
+        <p class="text-h6 q-mb-xs">{{ session.identity.user.name }}</p>
+        <p>{{ session.identity.user.email }}</p>
+        <q-list bordered separator class="rounded-borders q-mb-lg">
+          <q-item v-for="membership in session.identity.memberships" :key="membership.id">
             <q-item-section>
-              <q-item-label>{{ item.label }}</q-item-label>
-              <q-item-label caption>{{ item.caption }}</q-item-label>
+              <q-item-label>{{ membership.organization.name }}</q-item-label>
+              <q-item-label caption>{{
+                membership.role === 'management' ? 'Management' : 'Ranger'
+              }}</q-item-label>
             </q-item-section>
           </q-item>
+        </q-list>
+        <p v-if="!session.identity.memberships.length">
+          You have no active organization membership. Contact Management.
+        </p>
+        <div class="q-gutter-sm">
+          <q-btn
+            v-if="
+              session.identity.memberships.some((membership) => membership.role === 'management')
+            "
+            href="/admin"
+            label="Open administration"
+            color="primary"
+          />
+          <q-btn label="Sign out" outline color="primary" :loading="signingOut" @click="signOut" />
         </div>
-      </div>
+        <p class="text-caption q-mt-lg">An internet connection is required to sign out.</p>
+      </template>
+      <q-btn v-else-if="error" label="Retry connection" color="primary" @click="load" />
     </section>
   </q-page>
 </template>
 
 <script setup lang="ts">
-const foundationItems = [
-  {
-    icon: 'dashboard',
-    label: 'Quasar',
-    caption: 'Vue 3 application shell',
-  },
-  {
-    icon: 'offline_bolt',
-    label: 'PWA',
-    caption: 'Workbox mode installed',
-  },
-  {
-    icon: 'inventory_2',
-    label: 'Pinia',
-    caption: 'Client state baseline',
-  },
-] as const;
+import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { ApiError } from '../data/api/session';
+import { useSessionStore } from '../stores/session';
+
+const session = useSessionStore();
+const router = useRouter();
+const loading = ref(true);
+const signingOut = ref(false);
+const error = ref('');
+
+async function load() {
+  loading.value = true;
+  error.value = '';
+  try {
+    await session.refresh();
+    if (!session.identity) await router.replace('/sign-in');
+  } catch (cause) {
+    error.value =
+      cause instanceof ApiError
+        ? cause.message
+        : 'Unable to connect. Check your connection and retry.';
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function signOut() {
+  signingOut.value = true;
+  error.value = '';
+  try {
+    await session.signOut();
+    await router.replace('/sign-in');
+  } catch (cause) {
+    error.value =
+      cause instanceof ApiError
+        ? cause.message
+        : 'Sign-out was not confirmed. Reconnect and try again.';
+  } finally {
+    signingOut.value = false;
+  }
+}
+
+onMounted(load);
 </script>
-
-<style scoped>
-.foundation-page {
-  display: flex;
-  align-items: center;
-  min-height: inherit;
-  background: #f7f9fb;
-}
-
-.foundation-page__content {
-  width: min(100%, 880px);
-  margin: 0 auto;
-}
-
-.foundation-page__item {
-  min-height: 84px;
-  border: 1px solid #dce3ea;
-  border-radius: 8px;
-  background: #ffffff;
-}
-</style>

@@ -77,15 +77,15 @@ In production, both are served from one origin: the Client at `/`, Orchid at `/a
 
 ## Project status
 
-**Status: RUSH-002 compose and routing implemented.**
+**Status: RUSH-004 session authentication and policies implemented; pending review.**
 
 RUSH V1 is defined by **38 functional requirements** and **nine acceptance scenarios**. The [V1 implementation plan](docs/RUSH_V1_Implementation_Plan.md) organizes the work into **seven milestones and 49 development tasks**, with testable acceptance criteria, requirement traceability, and a target release of `v1.0.0`.
 
 The repository now contains the initial `server/` Laravel/Orchid application, the
 `client/` Quasar/Vue/TypeScript application shell, and the production-style Docker Compose
-entry point for Caddy, PHP-FPM, and private PostgreSQL routing. Authentication, domain
-models, synchronization, and deployment hardening are assigned to later tasks in the
-implementation plan.
+entry point for Caddy, PHP-FPM, and private PostgreSQL routing. Organization identity,
+Sanctum session sign-in/sign-out, and role/record policies are available. Operational
+domains, synchronization, and deployment hardening follow in the implementation plan.
 
 ### Bootstrap commands
 
@@ -137,6 +137,27 @@ the running container (restarting an existing container does not update its imag
 ```sh
 docker compose up -d --build --no-deps server
 ```
+
+### Authentication development
+
+After migrations, use `php server/artisan db:seed` only in a local development
+database to create the demo fixture. Sign in at `/sign-in` with
+`casey.ranger@example.com` (Ranger) or `avery.management@example.com` (Management),
+using the fixture password `password`. Never seed these known credentials into a
+production deployment. Management can open `/admin`; Rangers cannot.
+
+For hot reload, run `php server/artisan serve --host=127.0.0.1 --port=8000` and
+`npm --prefix client run dev -- --port 9000`, then use `http://localhost:9000`.
+Quasar proxies Server routes to port 8000. Set Server `APP_URL` to the public
+origin (including its port); set `SESSION_SECURE_COOKIE=false` only for local
+HTTP development. Sanctum includes the default local ports and `APP_URL`; custom
+origins can be configured with `SANCTUM_STATEFUL_DOMAINS`.
+
+The session API returns only your account and active memberships. Profile APIs
+demonstrate owner-only writes and organization-scoped Management reads. Orchid's
+unscoped starter account/role tools are disabled. See
+[`session authentication decisions`](docs/decisions/0004-session-authentication-and-policies.md)
+for the contract and follow-on offline account safeguards.
 
 ### Implementation roadmap
 

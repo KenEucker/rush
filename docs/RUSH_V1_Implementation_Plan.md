@@ -80,6 +80,21 @@ A task is done only when its stated outcome works through the relevant UI/API, p
 
 **Milestone demonstration:** Start from a clean checkout, authenticate as each role, inspect authorization differences, and open the Ranger Client and Orchid through the intended routes.
 
+### RUSH-004 implementation evidence
+
+RUSH-001–003 are prerequisites. RUSH-004 implements Technical §8 (cross-cutting
+authorization support for R-01–R-38): Sanctum same-origin sessions, CSRF,
+sign-out, current-membership policies, and account-isolated identity/profile
+reads and writes. Decisions and endpoint contracts are in
+[`0004-session-authentication-and-policies.md`](decisions/0004-session-authentication-and-policies.md).
+Evidence: `server/tests/Feature/SessionAuthenticationTest.php`,
+`server/tests/Feature/IdentityAuthorizationTest.php`,
+`client/src/stores/session.test.ts`, and
+[`RUSH-004 browser evidence`](evidence/RUSH-004/README.md).
+Implementation is ready for review; task completion still requires PR review and merge.
+The nine functional scenarios retain their later-task owners below; durable offline
+account security remains RUSH-008/013.
+
 ## 4. Milestone 2 — Offline infrastructure (RUSH-008–014)
 
 **Deliverable:** The initial *offline unavailability proof* from Technical §14 succeeds before the rest of the scheduling Client is built.

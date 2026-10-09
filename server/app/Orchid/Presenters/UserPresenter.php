@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Orchid\Presenters;
 
-use Illuminate\Support\Str;
 use Laravel\Scout\Builder;
 use Orchid\Screen\Contracts\Personable;
 use Orchid\Screen\Contracts\Searchable;
@@ -33,11 +32,7 @@ class UserPresenter extends Presenter implements Personable, Searchable
      */
     public function subTitle(): string
     {
-        $roles = $this->entity->roles->pluck('name')->implode(' / ');
-
-        return (string) Str::of($roles)
-            ->limit(20)
-            ->whenEmpty(fn () => __('Regular User'));
+        return 'RUSH account';
     }
 
     /**
@@ -45,7 +40,7 @@ class UserPresenter extends Presenter implements Personable, Searchable
      */
     public function url(): string
     {
-        return route('platform.systems.users.edit', $this->entity);
+        return '/';
     }
 
     /**
@@ -53,11 +48,7 @@ class UserPresenter extends Presenter implements Personable, Searchable
      */
     public function image(): ?string
     {
-        $hash = md5(strtolower(trim($this->entity->email)));
-
-        $default = urlencode('https://raw.githubusercontent.com/orchidsoftware/.github/main/web/avatars/gravatar.png');
-
-        return "https://www.gravatar.com/avatar/$hash?d=$default";
+        return null;
     }
 
     /**
