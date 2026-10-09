@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
 use Orchid\Filters\Types\WhereDateStartEnd;
@@ -18,6 +20,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'permissions',
     ];
 
     /**
@@ -66,4 +69,27 @@ class User extends Authenticatable
         'updated_at',
         'created_at',
     ];
+
+    /**
+     * @return HasMany<OrganizationMembership>
+     */
+    public function organizationMemberships(): HasMany
+    {
+        return $this->hasMany(OrganizationMembership::class);
+    }
+
+    /**
+     * @return HasManyThrough<MemberProfile>
+     */
+    public function memberProfiles(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            MemberProfile::class,
+            OrganizationMembership::class,
+            'user_id',
+            'organization_membership_id',
+            'id',
+            'id'
+        );
+    }
 }
