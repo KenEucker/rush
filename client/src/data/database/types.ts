@@ -16,7 +16,7 @@ export interface CachedProfile {
   cachedAt: string;
 }
 
-// Storage envelopes only. RUSH-009 owns the wire protocol and domain command union.
+// Storage envelopes; data/sync/protocol.ts owns validated wire commands.
 export type PendingState = 'pending' | 'syncing' | 'failed' | 'rejected' | 'conflict';
 export interface PendingCommand {
   operationId: string;

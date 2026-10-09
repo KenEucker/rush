@@ -1,5 +1,6 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import type { SessionIdentity } from '../../src/data/api/session';
+import { parseOperation, parsePullPage, parseResult } from '../../src/data/sync/protocol';
 
 function rangerAccount() {
   // Separate fixture accounts keep the real per-account login limiter enabled.
@@ -169,6 +170,56 @@ test('Management opens Orchid on the same origin and profile reads/writes enforc
         })
       ).status(),
     ).toBe(200);
+    const syncUrl = `/api/v1/organizations/${membership.organization.id}/sync`;
+    const operation = parseOperation({
+      operation_id: crypto.randomUUID(),
+      type: 'member_profile.update',
+      record_id: membership.profile!.id,
+      expected_revision: profile.revision,
+      payload: { display_name: profile.display_name },
+    });
+    for (const action of ['push', 'pull']) {
+      expect(
+        (
+          await rangerContext.request.post(`${syncUrl}/${action}`, {
+            headers: { Accept: 'application/json' },
+            data: action === 'push' ? operation : {},
+          })
+        ).status(),
+      ).toBe(419);
+    }
+    expect(
+      (
+        await context.request.post(`${syncUrl}/push`, {
+          headers: await csrfHeaders(context),
+          data: operation,
+        })
+      ).status(),
+    ).toBe(403);
+    const accepted = await rangerContext.request.post(`${syncUrl}/push`, {
+      headers: await csrfHeaders(rangerContext),
+      data: operation,
+    });
+    expect(accepted.status()).toBe(200);
+    const result = parseResult(await accepted.json(), membership.organization.id, operation);
+    expect(result.status).toBe('accepted');
+    const replay = await rangerContext.request.post(`${syncUrl}/push`, {
+      headers: await csrfHeaders(rangerContext),
+      data: operation,
+    });
+    expect(await replay.json()).toEqual(result);
+    const pulled = await rangerContext.request.post(`${syncUrl}/pull`, {
+      headers: await csrfHeaders(rangerContext),
+      data: { checkpoint: null, limit: 100 },
+    });
+    expect(pulled.status()).toBe(200);
+    const syncPage = parsePullPage(await pulled.json(), membership.organization.id);
+    expect(syncPage.changes.map((change) => change.record_id)).toEqual([membership.profile!.id]);
+    const next = await rangerContext.request.post(`${syncUrl}/pull`, {
+      headers: await csrfHeaders(rangerContext),
+      data: { checkpoint: syncPage.checkpoint },
+    });
+    expect(parsePullPage(await next.json(), membership.organization.id).changes).toEqual([]);
   } finally {
     await rangerContext.close();
   }

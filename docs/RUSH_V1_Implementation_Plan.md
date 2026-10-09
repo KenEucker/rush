@@ -171,6 +171,23 @@ RUSH-009–014 retain protocol, coordinator, PWA, availability and account-secur
 integration ownership; the offline proof and all nine scenario owners are unchanged.
 Task completion still requires human review and merge.
 
+### RUSH-009 implementation evidence
+
+RUSH-001–008 are merged prerequisites on `production`. RUSH-009 implements
+Technical §7 protocol support: stable operation UUIDs, typed push/pull contracts,
+current Server authorization/validation, atomic idempotency receipts and domain
+audit, revision conflicts, account-scoped sequenced pull pages, tombstones and
+checkpoint recovery. The existing member profile is the infrastructure proof;
+no new operational workflow or functional scenario is enabled. See
+[ADR 0009](decisions/0009-sync-operations-and-protocol.md),
+[wire contract](contracts/sync.md), and [test evidence](evidence/RUSH-009/README.md).
+Pest includes real PostgreSQL concurrent replay/competing-writer tests; Vitest
+proves durable command reconstruction and transport validation; Playwright checks
+real-session sync authorization, CSRF, replay and pull. This is cross-cutting
+support for R-01–R-38. RUSH-010–014 retain coordinator, Client reconciliation,
+availability/account-security integration and the mandatory offline proof.
+All nine scenario owners are unchanged; human review and merge remain required.
+
 ## 5. Milestone 3 — Scheduling configuration (RUSH-015–021)
 
 **Deliverable:** Management can configure every season scheduling input, while Rangers maintain default and weekly availability/preferences.

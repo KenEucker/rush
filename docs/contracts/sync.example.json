@@ -1,0 +1,21 @@
+{
+  "operation": {
+    "operation_id": "01920000-0000-7000-8000-000000000009",
+    "type": "member_profile.update",
+    "record_id": "01920000-0000-7000-8000-000000000001",
+    "expected_revision": 1,
+    "payload": { "display_name": "Casey Updated", "phone": "555-0100" }
+  },
+  "accepted": {
+    "operation_id": "01920000-0000-7000-8000-000000000009",
+    "status": "accepted",
+    "profile": {
+      "id": "01920000-0000-7000-8000-000000000001",
+      "organization_id": "01920000-0000-7000-8000-000000000002",
+      "display_name": "Casey Updated",
+      "phone": "555-0100",
+      "revision": 2,
+      "updated_at": "2026-10-09T12:00:00.000000Z"
+    }
+  }
+}
