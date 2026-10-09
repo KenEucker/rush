@@ -155,6 +155,22 @@ Task and Milestone 1 completion still require human review and merge.
 
 **Milestone demonstration:** Ranger syncs → disconnects → enters unavailability → closes/reopens app offline → manager changes a conflicting assignment → Ranger reconnects → system preserves intent and displays the conflict without silently rewriting the official assignment.
 
+### RUSH-008 implementation evidence
+
+RUSH-001–007 are merged prerequisites on `production`. RUSH-008 implements
+Technical §7's storage foundation: versioned, account/organization-partitioned
+Dexie stores, typed repositories, separate confirmed records and pending intent,
+atomic local writes, cache metadata/checkpoints, protected cache removal and
+actionable IndexedDB failures. See [ADR 0008](decisions/0008-dexie-storage-foundation.md)
+for the bounded local retention/privacy decision, schema and migration contract.
+Tests: `client/src/data/database/database.test.ts` and
+`client/src/data/repositories/accountStorage.test.ts`; results are recorded in
+[verification evidence](evidence/RUSH-008/README.md).
+This provides cross-cutting support for R-01–R-38 without enabling a new workflow.
+RUSH-009–014 retain protocol, coordinator, PWA, availability and account-security
+integration ownership; the offline proof and all nine scenario owners are unchanged.
+Task completion still requires human review and merge.
+
 ## 5. Milestone 3 — Scheduling configuration (RUSH-015–021)
 
 **Deliverable:** Management can configure every season scheduling input, while Rangers maintain default and weekly availability/preferences.

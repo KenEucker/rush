@@ -71,6 +71,18 @@ owner-only writes, sign-out and account switching on desktop/mobile Chromium.
 It complements `test:shell`, which uses the built SPA and mocked session responses.
 Offline reconciliation and installed-PWA proof remain Milestone 2 work.
 
+## Dexie foundation (RUSH-008)
+
+`npm --prefix client run test:unit` includes the database and account repository
+suites under `client/src/data/`. They use Dexie with `fake-indexeddb` to verify
+reload persistence, account/organization isolation, atomic command/projection
+writes, concurrent connections, retention guards, metadata/checkpoints, migration
+success/rollback, blocked upgrades and storage restrictions/quota/read failures.
+These tests do not satisfy the production-built PWA offline reconciliation gate;
+RUSH-011–014 retain that acceptance scope. See
+[ADR 0008](decisions/0008-dexie-storage-foundation.md) and
+[task evidence](evidence/RUSH-008/README.md).
+
 ## PR and commit checks
 
 Fill every section of `.github/pull_request_template.md`. Use a Conventional Commit

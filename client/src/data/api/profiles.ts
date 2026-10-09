@@ -16,7 +16,11 @@ export interface UpdateMemberProfile {
   phone?: string | null;
 }
 
-function parseProfile(value: unknown, organizationId: string, profileId: string): MemberProfile {
+export function parseProfile(
+  value: unknown,
+  organizationId: string,
+  profileId: string,
+): MemberProfile {
   if (typeof value === 'object' && value !== null) {
     const profile = value as Partial<MemberProfile>;
     if (
