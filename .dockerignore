@@ -1,0 +1,32 @@
+.git
+.gitignore
+.github
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+auth.json
+
+# PHP / Laravel local state
+server/vendor/
+server/public/build/
+server/public/hot
+server/public/storage
+server/storage/*.key
+server/storage/logs/*.log
+server/storage/framework/cache/data/*
+server/storage/framework/sessions/*
+server/storage/framework/views/*.php
+server/database/*.sqlite
+server/database/*.sqlite-*
+
+# Node / Quasar local state
+client/node_modules/
+client/src-pwa/node_modules/
+client/.quasar/
+client/dist/
+client/quasar.config.*.temporary.compiled*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
