@@ -88,21 +88,22 @@ later tasks in the implementation plan.
 
 ### Bootstrap commands
 
-From a clean checkout:
+The development workflow assumes a Unix workspace and a POSIX-compatible shell.
+Run these commands from the repository root in a clean checkout:
 
-```powershell
+```sh
 composer install --working-dir=server
-Copy-Item server\.env.example server\.env
-New-Item -ItemType File -Path server\database\database.sqlite -Force
-php server\artisan key:generate
-php server\artisan migrate --force
+cp server/.env.example server/.env
+touch server/database/database.sqlite
+php server/artisan key:generate
+php server/artisan migrate --force
 npm install --prefix client
-npm install --prefix client\src-pwa
+npm install --prefix client/src-pwa
 ```
 
 Useful checks:
 
-```powershell
+```sh
 npm run server:test
 npm run server:format
 npm run client:lint
