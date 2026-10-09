@@ -32,10 +32,16 @@ function isApiFailure(value: unknown): value is ApiFailure {
   );
 }
 
-export async function sessionRequest<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+export async function sessionRequest<T>(
+  path: string,
+  method = 'GET',
+  body?: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
   const token = document.cookie.split('; ').find((cookie) => cookie.startsWith('XSRF-TOKEN='));
   const response = await fetch(path, {
     method,
+    ...(signal ? { signal } : {}),
     credentials: 'same-origin',
     cache: 'no-store',
     headers: {

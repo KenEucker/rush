@@ -188,6 +188,22 @@ support for R-01–R-38. RUSH-010–014 retain coordinator, Client reconciliatio
 availability/account-security integration and the mandatory offline proof.
 All nine scenario owners are unchanged; human review and merge remain required.
 
+### RUSH-010 implementation evidence
+
+RUSH-001–009 are merged prerequisites on production. RUSH-010 implements the
+Technical §7 central Client coordinator: durable acknowledgment, stable-ID push,
+transactional checkpointed pull, persisted failure/backoff and session pauses,
+interrupted-work recovery, foreground connectivity checks and cross-tab exclusion.
+Dexie v2 preserves v1 intent and adds coordinator state. See
+[ADR 0010](decisions/0010-central-sync-coordinator.md) and
+[verification evidence](evidence/RUSH-010/README.md). Vitest covers migration,
+transaction rollback, retries, cancellation and reconciliation. Playwright runs
+the real coordinator against Sanctum/PostgreSQL with native Web Locks and a real
+revision conflict. This is cross-cutting infrastructure support for R-01–R-38;
+all nine acceptance scenario owners are unchanged. RUSH-011–014 retain PWA startup,
+availability, account-security UX, observability and the mandatory offline gate.
+Human review and merge remain required for task completion.
+
 ## 5. Milestone 3 — Scheduling configuration (RUSH-015–021)
 
 **Deliverable:** Management can configure every season scheduling input, while Rangers maintain default and weekly availability/preferences.

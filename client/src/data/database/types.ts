@@ -40,7 +40,7 @@ export interface PendingRecord {
 export interface Checkpoint {
   stream: string;
   token: string;
-  lastSuccessfulSyncAt: string;
+  lastSuccessfulSyncAt: string | null;
 }
 
 export interface CacheMetadata {
@@ -50,4 +50,13 @@ export interface CacheMetadata {
   schemaVersion: number;
   createdAt: string;
   lastCachedAt: string | null;
+}
+
+export interface SyncState {
+  key: 'coordinator';
+  failures: number;
+  nextAttemptAt: number | null;
+  paused: boolean;
+  problem: { code: string; message: string } | null;
+  lastSuccessfulSyncAt: string | null;
 }

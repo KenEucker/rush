@@ -45,7 +45,7 @@ it('persists authorized profiles, metadata and opaque checkpoints after reopenin
   expect(await storage.checkpoints.get('profiles')).toEqual(checkpoint);
   expect(await storage.metadata.get()).toMatchObject({
     ...scope,
-    schemaVersion: 1,
+    schemaVersion: 2,
     lastCachedAt: expect.any(String),
   });
 });
