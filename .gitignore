@@ -1,31 +1,38 @@
-/vendor/
-node_modules/
-npm-debug.log
-yarn-error.log
+# Operating system
+.DS_Store
+Thumbs.db
 
-# Laravel 4 specific
-bootstrap/compiled.php
-app/storage/
-
-# Laravel 5 & Lumen specific
-public/storage
-public/hot
-
-# Laravel 5 & Lumen specific with changed public path
-public_html/storage
-public_html/hot
-
-storage/*.key
+# Environment and local secrets
 .env
-Homestead.yaml
-Homestead.json
-/.vagrant
-.phpunit.result.cache
-/.phpunit.cache
-
-/public/build
-/storage/pail
-.env.backup
-.env.production
-.phpactor.json
+.env.*
+!.env.example
 auth.json
+
+# PHP / Laravel
+server/.claude/
+server/.mcp.json
+server/AGENTS.md
+server/CLAUDE.md
+server/boost.json
+server/vendor/
+server/public/build/
+server/public/hot
+server/public/storage
+server/storage/*.key
+server/storage/pail/
+server/.phpunit.cache/
+server/.phpunit.result.cache
+server/.phpactor.json
+server/database/*.sqlite
+server/database/*.sqlite-*
+
+# Node / Quasar
+client/.vscode/
+client/node_modules/
+client/src-pwa/node_modules/
+client/.quasar/
+client/dist/
+client/quasar.config.*.temporary.compiled*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
