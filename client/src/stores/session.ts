@@ -1,10 +1,14 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { ApiError, login, logout, sessionRequest, type SessionIdentity } from '../data/api/session';
 
 export const useSessionStore = defineStore('session', () => {
   const identity = ref<SessionIdentity | null>(null);
   const checked = ref(false);
+  const isManagement = computed(
+    () =>
+      identity.value?.memberships.some((membership) => membership.role === 'management') ?? false,
+  );
 
   async function refresh() {
     try {
@@ -31,5 +35,5 @@ export const useSessionStore = defineStore('session', () => {
     checked.value = true;
   }
 
-  return { identity, checked, refresh, signIn, signOut };
+  return { identity, checked, isManagement, refresh, signIn, signOut };
 });

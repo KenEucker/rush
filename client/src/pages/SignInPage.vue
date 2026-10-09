@@ -1,8 +1,8 @@
 <template>
-  <q-page class="q-pa-lg flex flex-center">
+  <q-page tabindex="-1" class="q-pa-lg flex flex-center">
     <section style="width: 100%; max-width: 420px" aria-labelledby="sign-in-title">
       <p class="text-overline text-primary">Ranger Unified Scheduling &amp; Hours</p>
-      <h1 id="sign-in-title" class="text-h4">Sign in to RUSH</h1>
+      <h1 id="sign-in-title" class="text-h4" tabindex="-1">Sign in to RUSH</h1>
       <p>Use the account provided by your organization.</p>
       <q-banner v-if="error" role="alert" class="bg-red-1 text-negative q-mb-md">{{
         error

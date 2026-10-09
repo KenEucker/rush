@@ -1,19 +1,7 @@
 <template>
-  <div class="fullscreen bg-blue text-white text-center q-pa-md flex flex-center">
-    <div>
-      <div style="font-size: 30vh">404</div>
-
-      <div class="text-h2" style="opacity: 0.4">Oops. Nothing here...</div>
-
-      <q-btn
-        class="q-mt-xl"
-        color="white"
-        text-color="blue"
-        unelevated
-        to="/"
-        label="Go Home"
-        no-caps
-      />
-    </div>
-  </div>
+  <q-page tabindex="-1" class="page-content">
+    <h1 class="text-h4" tabindex="-1">Page not found</h1>
+    <p>This address does not match a RUSH page.</p>
+    <q-btn color="primary" to="/" label="Return to overview" no-caps />
+  </q-page>
 </template>

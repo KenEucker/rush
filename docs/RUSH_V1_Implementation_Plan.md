@@ -95,6 +95,20 @@ Implementation is ready for review; task completion still requires PR review and
 The nine functional scenarios retain their later-task owners below; durable offline
 account security remains RUSH-008/013.
 
+### RUSH-005 implementation evidence
+
+RUSH-001–004 are merged prerequisites. RUSH-005 provides the responsive Quasar
+Ranger/Management shell, accessible navigation, existing policy-protected Orchid
+entry, and a transient QCalendar/QDate/QTime preview (Technical §§3, 9;
+cross-cutting presentation support for R-01–R-38).
+See [ADR 0005](decisions/0005-ui-administration-shell.md),
+[verification and screenshots](evidence/RUSH-005/README.md),
+the Client's e2e/shell.spec.ts and src/ui/calendarPreview.test.ts, and the existing
+Server IdentityAuthorizationTest.php / SessionAuthenticationTest.php.
+No operational workflow or acceptance scenario is claimed complete; the nine
+scenario owners below and the Milestone 2 offline gate are unchanged.
+Implementation completion still requires PR review and merge.
+
 ## 4. Milestone 2 — Offline infrastructure (RUSH-008–014)
 
 **Deliverable:** The initial *offline unavailability proof* from Technical §14 succeeds before the rest of the scheduling Client is built.
