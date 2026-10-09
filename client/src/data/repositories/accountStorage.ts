@@ -2,6 +2,7 @@ import type { DexieOptions } from 'dexie';
 import { parseProfile, type MemberProfile } from '../api/profiles';
 import { AccountDatabase } from '../database/database';
 import { StorageError } from '../database/errors';
+import { syncRepository } from './syncRepository';
 import type {
   AccountScope,
   Checkpoint,
@@ -19,6 +20,8 @@ export class PendingWorkError extends StorageError {
 
 function repositories(db: AccountDatabase) {
   return {
+    scope: db.scope,
+    sync: syncRepository(db),
     profiles: {
       get: (id: string) => db.read(() => db.profiles.get(id)),
       list: () => db.read(() => db.profiles.toArray()),
@@ -115,6 +118,7 @@ function repositories(db: AccountDatabase) {
           await db.pendingCommands.clear();
           await db.pendingRecords.clear();
           await db.checkpoints.clear();
+          await db.syncState.clear();
           await db.metadata.update('cache', { lastCachedAt: null });
         }),
       );

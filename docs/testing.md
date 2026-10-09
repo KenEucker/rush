@@ -137,3 +137,20 @@ Pest JUnit/logs, and Compose status/logs. Locally, reports are under
 Never commit reports containing session cookies. There are no automatic retries;
 fix the cause of a failing check. Branch protection and human review remain
 repository-admin responsibilities, and no workflow deploys or merges code.
+
+## Central coordinator (RUSH-010)
+
+The Client unit suite includes data/sync/coordinator.test.ts and
+data/repositories/syncRepository.test.ts. They execute durable queue/reopen,
+backoff/timer/timeout, terminal rejection, authentication pause, pagination/reset,
+tombstone/revision, multiple-connection and transaction rollback cases.
+database.test.ts now also proves the actual v1-to-v2 migration and rollback.
+
+The existing full-stack test command additionally runs e2e/integration/sync.spec.ts
+on desktop/mobile. It bundles the production coordinator into a test-only in-memory
+harness, injects it into the real site origin, and exercises native Web Locks,
+IndexedDB document reload, accepted Server writes and conflicting revisions.
+The harness never becomes a production asset. This is coordinator integration,
+not the later offline-shell/availability/official-assignment acceptance gate.
+See [ADR 0010](decisions/0010-central-sync-coordinator.md) and
+[RUSH-010 evidence](evidence/RUSH-010/README.md).

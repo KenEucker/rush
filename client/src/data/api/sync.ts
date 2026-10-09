@@ -6,10 +6,14 @@ function path(organizationId: string, action: 'push' | 'pull'): string {
 }
 
 // Transport only: no retries, queue, cached API responses or background activity.
-export async function pushOperation(organizationId: string, input: SyncOperation) {
+export async function pushOperation(
+  organizationId: string,
+  input: SyncOperation,
+  signal?: AbortSignal,
+) {
   const operation = parseOperation(input);
   return parseResult(
-    await sessionRequest<unknown>(path(organizationId, 'push'), 'POST', operation),
+    await sessionRequest<unknown>(path(organizationId, 'push'), 'POST', operation, signal),
     organizationId,
     operation,
   );
@@ -19,11 +23,17 @@ export async function pullChanges(
   organizationId: string,
   checkpoint: string | null = null,
   limit = 100,
+  signal?: AbortSignal,
 ) {
   if (!Number.isInteger(limit) || limit < 1 || limit > 100)
     throw new TypeError('Pull limit must be between 1 and 100.');
   return parsePullPage(
-    await sessionRequest<unknown>(path(organizationId, 'pull'), 'POST', { checkpoint, limit }),
+    await sessionRequest<unknown>(
+      path(organizationId, 'pull'),
+      'POST',
+      { checkpoint, limit },
+      signal,
+    ),
     organizationId,
   );
 }
