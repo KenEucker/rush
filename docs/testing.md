@@ -83,6 +83,24 @@ RUSH-011–014 retain that acceptance scope. See
 [ADR 0008](decisions/0008-dexie-storage-foundation.md) and
 [task evidence](evidence/RUSH-008/README.md).
 
+## Sync protocol (RUSH-009)
+
+`server/tests/Feature/SyncProtocolTest.php` covers validation, replay, authorization,
+conflicts, receipt/journal rollback, bounded pagination, tombstones and invalid
+checkpoints. `SyncConcurrencyTest.php` requires a disposable PostgreSQL database;
+SQLite explicitly skips its two row-lock cases. Two independent PHP processes
+must both reach the membership lock before release, proving duplicate requests
+have one effect and competing operations cannot accept the same revision. Never
+run concurrent test suites against the same disposable database.
+
+Vitest adds `data/sync/protocol.test.ts` and `data/api/sync.test.ts` for operation
+IDs across Dexie reopen, failed local saves, shared wire examples, malformed
+responses, account scope, interruption and transport errors. The existing full-stack
+`e2e/integration/auth.spec.ts` also exercises real sync CSRF/authorization, replay
+and checkpointed pull on desktop/mobile. This is protocol evidence, not the later
+offline availability/reconciliation acceptance proof. See
+[RUSH-009 evidence](evidence/RUSH-009/README.md).
+
 ## PR and commit checks
 
 Fill every section of `.github/pull_request_template.md`. Use a Conventional Commit

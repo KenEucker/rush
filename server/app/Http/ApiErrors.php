@@ -3,6 +3,7 @@
 namespace App\Http;
 
 use App\Exceptions\RevisionConflict;
+use App\Exceptions\SyncProtocolConflict;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,6 +33,10 @@ class ApiErrors
             503 => ['service_unavailable', 'The server is temporarily unavailable. Please try again later.'],
             default => ['server_error', 'The server could not complete your request.'],
         };
+
+        if ($exception instanceof SyncProtocolConflict) {
+            [$code, $message] = [$exception->errorCode, $exception->getMessage()];
+        }
 
         // Keep Laravel's status/headers (including Retry-After), never debug traces.
         $response->setContent(json_encode([
