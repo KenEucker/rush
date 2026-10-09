@@ -77,11 +77,40 @@ In production, both are served from one origin: the Client at `/`, Orchid at `/a
 
 ## Project status
 
-**Status: Planning complete; implementation pending.**
+**Status: RUSH-001 foundation bootstrap in progress.**
 
 RUSH V1 is defined by **38 functional requirements** and **nine acceptance scenarios**. The [V1 implementation plan](docs/RUSH_V1_Implementation_Plan.md) organizes the work into **seven milestones and 49 development tasks**, with testable acceptance criteria, requirement traceability, and a target release of `v1.0.0`.
 
-Repository setup instructions and runnable Docker commands will be added as the application is implemented. This README intentionally does not claim that unbuilt features or deployment scripts already work.
+The repository now contains the initial `server/` Laravel/Orchid application and the
+`client/` Quasar/Vue/TypeScript application shell. Docker, PostgreSQL, Caddy routing,
+authentication, domain models, synchronization, and deployment hardening are assigned to
+later tasks in the implementation plan.
+
+### Bootstrap commands
+
+The development workflow assumes a Unix workspace and a POSIX-compatible shell.
+Run these commands from the repository root in a clean checkout:
+
+```sh
+composer install --working-dir=server
+cp server/.env.example server/.env
+touch server/database/database.sqlite
+php server/artisan key:generate
+php server/artisan migrate --force
+npm install --prefix client
+npm install --prefix client/src-pwa
+```
+
+Useful checks:
+
+```sh
+npm run server:test
+npm run server:format
+npm run client:lint
+npm run client:test
+npm run client:build
+npm run client:build:pwa
+```
 
 ### Implementation roadmap
 
