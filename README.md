@@ -196,7 +196,10 @@ The [implementation plan](docs/RUSH_V1_Implementation_Plan.md) defines the full 
 
 ## Development documentation
 
-For installation, first-online setup, updates and current offline limits, see the\n[PWA guide](docs/pwa.md).\n\nThese documents guide implementation:
+For installation, first-online setup, updates and current offline limits, see the
+[PWA guide](docs/pwa.md).
+
+These documents guide implementation:
 
 - [`docs/RUSH_V1_Requirements.md`](docs/RUSH_V1_Requirements.md) — Functional behavior, exclusions, and acceptance scenarios.
 - [`docs/RUSH_V1_Technical_Specification.md`](docs/RUSH_V1_Technical_Specification.md) — Architecture, offline contract, conventions, and implementation milestones.
