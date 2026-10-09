@@ -3,9 +3,12 @@
 use Illuminate\Support\Facades\Route;
 
 it('boots the Laravel application shell', function () {
+    config(['app.name' => 'RUSH']);
+
     $this->get('/')
         ->assertOk()
-        ->assertSee('Laravel');
+        ->assertViewIs('welcome')
+        ->assertSee('<title>RUSH</title>', false);
 });
 
 it('registers Orchid administration routes', function () {
