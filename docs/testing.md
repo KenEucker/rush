@@ -10,6 +10,7 @@ Use Node 24.16.0, PHP 8.5 with the extensions listed in CI, Composer 2, Git and
 Docker Compose. Install locked dependencies from the repository root:
 
 ```sh
+cp server/.env.example server/.env
 composer install --working-dir=server --no-interaction --prefer-dist
 npm ci --prefix client
 npm ci --prefix client/src-pwa
@@ -18,7 +19,10 @@ npx --prefix client playwright install chromium
 
 On Linux, install browser OS dependencies with
 `npx --prefix client playwright install --with-deps chromium`.
-No local `.env` or pre-existing database is required for the test suites.
+The Server test environment is initialized from the committed example; no secret
+values or pre-existing database are needed. CI supplies its disposable key and
+PostgreSQL settings through environment variables. Preserve an existing local
+`.env` when working outside a clean checkout.
 
 ```sh
 npm run conventions:test

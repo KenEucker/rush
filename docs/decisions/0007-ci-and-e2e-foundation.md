@@ -24,7 +24,9 @@ but cannot establish that those boundaries work together.
 - GitHub Actions runs four independent jobs for PRs targeting `production` or
   `main`, pushes to those branches, and manual runs. PR metadata edits rerun the
   checks. There are no path filters that could accidentally skip required checks.
-- Each job starts from checkout and committed lockfiles. Node 24.16.0 matches the
+- Each job starts from checkout and committed lockfiles. The Server initializes
+  its disposable `.env` from the committed example, then overlays CI settings.
+  Node 24.16.0 matches the
   Client production builder; PHP 8.5 runs the locked Pest 5/PHPUnit 13 development
   dependencies, while integration tests exercise the pinned PHP 8.4 production
   image. PostgreSQL uses the same pinned image as production.

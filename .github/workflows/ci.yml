@@ -69,6 +69,8 @@ jobs:
           coverage: none
           tools: composer:2
       - run: composer validate --working-dir=server --strict
+      - name: Initialize disposable test environment from committed defaults
+        run: cp server/.env.example server/.env
       - run: composer install --working-dir=server --no-interaction --prefer-dist --no-progress
       - run: composer --working-dir=server format:check
       - name: Verify fresh migrations, rollback and reapplication

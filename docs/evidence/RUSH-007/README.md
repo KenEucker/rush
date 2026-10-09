@@ -13,6 +13,7 @@ scenario is claimed complete.
 | `composer validate --working-dir=server --strict` | Passed |
 | `composer --working-dir=server format:check` | Pint passed |
 | `composer --working-dir=server test -- --compact` | 47 passed, 385 assertions (SQLite) |
+| Fresh Git archive, copy committed `.env.example`, locked `composer install`, then `composer test -- --compact --display-warnings` | 47 passed, 385 assertions; no warnings |
 | `php server/artisan migrate --force`, `migrate:rollback --force`, `migrate --force` | All passed on disposable PostgreSQL 17.2 |
 | `composer --working-dir=server test -- --compact --log-junit storage/logs/pest.xml` | 47 passed, 385 assertions (PostgreSQL) |
 | `npm --prefix client run test:unit` | 32 passed |
@@ -47,6 +48,13 @@ was altered. See [testing guide](../../testing.md) for repeatable commands.
   contract, including HTTP 422 and exact same-origin admin destination.
 - The first formatting invocation resolved paths from the wrong working
   directory; it was rerun from `client` and the complete lint check passed.
+- The first hosted run passed Client and convention checks but exposed an absent
+  `.env`: the health test received the default application name `Laravel`. CI now
+  initializes its disposable environment from the committed example before
+  installing and testing, with key/database settings supplied by the job.
+- The first hosted E2E build was interrupted by Docker Hub returning HTTP 504
+  for its authentication token endpoint. This external pull failure is distinct
+  from an application/test failure; the subsequent CI run retries the build.
 
 ## Acceptance and limits
 
