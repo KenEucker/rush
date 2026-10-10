@@ -11,21 +11,6 @@
     </q-banner>
     <template v-if="session.workspace && session.storage">
       <p>{{ session.workspace.label }} · Times in {{ timeZone }} (this device)</p>
-      <q-banner class="bg-blue-1 q-mb-md" role="status">
-        {{
-          session.offlineAccess
-            ? 'Cached workspace. Reconnect to verify your session.'
-            : online
-              ? 'Session verified.'
-              : 'Offline with cached information.'
-        }}
-        {{ pending }} pending change(s). Last sync:
-        {{ lastSync ? new Date(lastSync).toLocaleString('en-US') : 'Not yet synchronized' }}.
-        <div v-if="syncProblem">
-          {{ syncProblem }} <router-link to="/sign-in">Sign in again</router-link> if your session
-          has expired.
-        </div>
-      </q-banner>
       <p>
         Saved changes are pending until the Server accepts them. Recording unavailability does not
         change an assignment or mean Management has acknowledged it.
@@ -88,23 +73,41 @@
             <div v-if="entry.state === 'synced'" class="q-mt-sm">
               <q-btn flat color="primary" label="Edit time range" @click="edit(entry)" />
             </div>
+            <q-btn
+              v-if="['rejected', 'conflict'].includes(entry.state)"
+              flat
+              color="negative"
+              label="Discard this saved change"
+              @click="discardId = entry.operationId"
+            />
           </q-item-section>
         </q-item>
       </q-list>
     </template>
     <p v-else>Sign in online as a Ranger to prepare your availability workspace.</p>
+    <q-dialog :model-value="!!discardId" @update:model-value="discardId = undefined">
+      <q-card class="q-pa-md" style="max-width: 420px">
+        <h2 class="text-h6">Discard saved intent?</h2>
+        <p>
+          This removes your rejected or conflicting edit from this device. The current Server range
+          remains unchanged. You can then edit that range or submit a new report.
+        </p>
+        <q-card-actions align="right">
+          <q-btn flat label="Keep saved change" v-close-popup />
+          <q-btn flat color="negative" label="Confirm discard" @click="discard" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useSessionStore } from '../stores/session';
 import { useAvailability } from '../composables/useAvailability';
-import { useConnectivity } from '../composables/useConnectivity';
 import { formatInterval, localParts } from '../domain/availability';
 import AvailabilityDateTime from '../components/AvailabilityDateTime.vue';
 const session = useSessionStore();
-const { online } = useConnectivity();
-const { entries, pending, lastSync, error: readError, syncProblem, save } = useAvailability();
+const { entries, error: readError, save } = useAvailability();
 const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 const startDate = ref(''),
   startTime = ref('09:00 AM'),
@@ -115,6 +118,17 @@ const editingId = ref<string>(),
 const saving = ref(false),
   error = ref(''),
   notice = ref('');
+const discardId = ref<string>();
+async function discard() {
+  try {
+    if (discardId.value && session.workspace && session.storage)
+      await session.storage.sync.discardTerminal(discardId.value);
+    discardId.value = undefined;
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : 'Could not discard the saved change.';
+    discardId.value = undefined;
+  }
+}
 const labels: Record<string, string> = {
   pending: 'Pending — saved on this device',
   syncing: 'Syncing — waiting for Server confirmation',

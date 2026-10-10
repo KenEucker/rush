@@ -10,6 +10,45 @@ import { stageProfileUpdate, type PullPage } from '../sync/protocol';
 const scope = { accountId: 81, organizationId: contract.accepted.profile.organization_id };
 const stores: AccountStorage[] = [];
 const now = '2026-10-09T00:00:00Z';
+
+it('discards only explicitly selected terminal intent and preserves confirmed records', async () => {
+  const storage = await open();
+  await storage.sync.applyPage(null, page('first', 2), now);
+  const operation = await stageProfileUpdate(storage, contract.operation.record_id, {
+    expected_revision: 1,
+    display_name: 'Conflicting intent',
+  });
+  await expect(storage.sync.discardTerminal(operation.operation_id)).rejects.toMatchObject({
+    code: 'write_failed',
+  });
+  await storage.sync.mark(operation.operation_id, 'conflict');
+  expect((await storage.sync.snapshot()).commands).toHaveLength(1);
+  await storage.sync.discardTerminal(operation.operation_id);
+  expect(await storage.pending.list()).toEqual([]);
+  expect(await storage.pending.records()).toEqual([]);
+  expect((await storage.profiles.get(contract.operation.record_id))?.value.revision).toBe(2);
+});
+
+it('rolls back explicit discard if deleting the local representation fails', async () => {
+  const storage = await open();
+  const operation = await stageProfileUpdate(storage, contract.operation.record_id, {
+    expected_revision: 1,
+    display_name: 'Keep on failure',
+  });
+  await storage.sync.mark(operation.operation_id, 'rejected');
+  // eslint-disable-next-line @typescript-eslint/unbound-method
+  const remove = IDBObjectStore.prototype.delete;
+  vi.spyOn(IDBObjectStore.prototype, 'delete').mockImplementation(function (
+    this: IDBObjectStore,
+    ...args
+  ) {
+    if (this.name === 'pendingRecords') throw new Error('Storage failure');
+    return remove.apply(this, args);
+  });
+  await expect(storage.sync.discardTerminal(operation.operation_id)).rejects.toThrow();
+  expect(await storage.pending.list()).toHaveLength(1);
+  expect(await storage.pending.records()).toHaveLength(1);
+});
 async function open(accountId = scope.accountId) {
   const storage = await openAccountStorage({ ...scope, accountId });
   stores.push(storage);

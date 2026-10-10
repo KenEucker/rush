@@ -24,6 +24,29 @@ const initialState = (): SyncState => ({
 // stay short; no network work occurs inside a Dexie transaction.
 export function syncRepository(db: AccountDatabase) {
   return {
+    // One coherent account-scoped snapshot, observed by the application shell.
+    snapshot: () =>
+      db.read(() =>
+        db.transaction('r', db.syncState, db.pendingCommands, db.unavailabilities, async () => ({
+          state: (await db.syncState.get('coordinator')) ?? initialState(),
+          commands: await db.pendingCommands.toArray(),
+          assignmentConflicts: (await db.unavailabilities.toArray()).filter(
+            ({ value }) => value.assignment_conflicts?.length,
+          ).length,
+        })),
+      ),
+    async discardTerminal(operationId: string) {
+      await db.write(() =>
+        db.transaction('rw', db.pendingCommands, db.pendingRecords, async () => {
+          const command = await db.pendingCommands.get(operationId);
+          if (!command) return;
+          if (!['conflict', 'rejected'].includes(command.state))
+            throw new Error('Only a rejected or conflicting change can be discarded.');
+          await db.pendingCommands.delete(operationId);
+          await db.pendingRecords.delete(operationId);
+        }),
+      );
+    },
     state: () => db.read(async () => (await db.syncState.get('coordinator')) ?? initialState()),
     saveState: (state: SyncState) => db.write(() => db.syncState.put(state)),
     async mark(operationId: string, state: PendingState, problem: SyncState['problem'] = null) {
