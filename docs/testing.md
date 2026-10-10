@@ -154,3 +154,21 @@ The harness never becomes a production asset. This is coordinator integration,
 not the later offline-shell/availability/official-assignment acceptance gate.
 See [ADR 0010](decisions/0010-central-sync-coordinator.md) and
 [RUSH-010 evidence](evidence/RUSH-010/README.md).
+
+## Milestone 2 regression gate (RUSH-014)
+
+Run the full Client unit suite and production-stack E2E command above. The new
+`e2e/integration/sync-observability.spec.ts` exercises lost accepted receipts,
+duplicate operation replay, interruption before pull completes, reload, manual
+recovery, two independent device stores, and explicit conflict discard. It uses
+real Laravel/PostgreSQL mutations and only intercepts transport failures.
+Desktop/mobile screenshots are saved to `docs/evidence/RUSH-014/` using seeded
+fixture accounts. Clear fixture rate-limit counters before rerunning a suite.
+
+The gate also includes `availability.spec.ts` (offline browser restart and
+competing availability revision), `conflict-security.spec.ts` (real Management
+assignment changes, logout/account switching and expired sessions), `sync.spec.ts`
+(native Web Locks/multiple tabs), `pwa.spec.ts` (shell/cache isolation) and
+`auth.spec.ts` (real sessions and authorization). Pest's PostgreSQL-only concurrent
+duplicate/competing-writer cases remain mandatory CI evidence; SQLite skips them.
+Do not claim later scheduling or nine-scenario release acceptance from this gate.

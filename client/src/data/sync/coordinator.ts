@@ -65,6 +65,30 @@ export class SyncCoordinator {
   private nextWakeDelay = 30_000;
   // Storage/capability errors cannot necessarily be persisted. Expose them to callers.
   lastError: unknown = null;
+  private running = false;
+  private observers = new Set<() => void>();
+
+  status() {
+    return { running: this.running, error: this.lastError };
+  }
+
+  subscribeStatus(observer: () => void) {
+    this.observers.add(observer);
+    observer();
+    return () => {
+      this.observers.delete(observer);
+    };
+  }
+
+  private notify() {
+    this.observers.forEach((observer) => observer());
+  }
+
+  // Explicit retry bypasses temporary backoff, never an authorization pause or
+  // terminal command result. The same operation IDs are sent under the Web Lock.
+  retryNow(): Promise<void> {
+    return this.syncOnce(true);
+  }
 
   constructor(
     private readonly storage: AccountStorage,
@@ -124,18 +148,26 @@ export class SyncCoordinator {
     await this.start();
   }
 
-  syncOnce(): Promise<void> {
+  syncOnce(retry = false): Promise<void> {
     if (this.flight) return this.flight;
     if (this.stopped) return Promise.resolve();
     const abort = new AbortController();
     this.abort = abort;
     this.flight = this.environment
       .exclusive(databaseName(this.storage.scope), abort.signal, async () => {
-        if (!abort.signal.aborted) await this.run(abort.signal);
+        if (!abort.signal.aborted) {
+          try {
+            await this.run(abort.signal, retry);
+          } finally {
+            this.running = false;
+            this.notify();
+          }
+        }
       })
       .catch((error: unknown) => {
         if (!abort.signal.aborted) {
           this.lastError = error;
+          this.notify();
           throw error;
         }
       })
@@ -181,16 +213,18 @@ export class SyncCoordinator {
     }
   }
 
-  private async run(signal: AbortSignal): Promise<void> {
+  private async run(signal: AbortSignal, retry: boolean): Promise<void> {
     this.nextWakeDelay = 30_000;
     if (!this.environment.online()) return; // A hint only; actual requests prove reachability.
     let state = await this.storage.sync.state();
     if (state.paused) return;
-    if (state.nextAttemptAt !== null && state.nextAttemptAt > this.environment.now()) {
+    if (!retry && state.nextAttemptAt !== null && state.nextAttemptAt > this.environment.now()) {
       this.nextWakeDelay = state.nextAttemptAt - this.environment.now();
       return;
     }
     this.lastError = null;
+    this.running = true;
+    this.notify();
     let operationId: string | undefined;
     try {
       const pending = await this.storage.pending.list();

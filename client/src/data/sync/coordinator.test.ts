@@ -163,6 +163,47 @@ it('resumes a syncing command left by an interrupted process', async () => {
   expect(await storage.pending.records()).toEqual([]);
 });
 
+it('manual recovery bypasses backoff with the same ID but never retries terminal intent or an auth pause', async () => {
+  const storage = await open();
+  const transport = api();
+  const sync = coordinator(storage, transport);
+  const operation = await stage(sync);
+  transport.push.mockRejectedValueOnce(new TypeError('Lost response'));
+  await sync.syncOnce();
+  await sync.retryNow();
+  expect(transport.push.mock.calls.map((call) => call[1].operation_id)).toEqual([
+    operation.operation_id,
+    operation.operation_id,
+  ]);
+  const terminal = await stage(sync);
+  await storage.sync.mark(terminal.operation_id, 'conflict');
+  await sync.retryNow();
+  expect(transport.push).toHaveBeenCalledTimes(2);
+  await stage(sync);
+  await storage.sync.saveState({ ...(await storage.sync.state()), paused: true });
+  await sync.retryNow();
+  expect(transport.push).toHaveBeenCalledTimes(2);
+  expect(await storage.pending.list()).toHaveLength(2);
+});
+
+it('observes a pull-only sync and reports capability errors, then clears them on recovery', async () => {
+  const storage = await open();
+  const transport = api();
+  const sync = coordinator(storage, transport);
+  const observed: ReturnType<SyncCoordinator['status']>[] = [];
+  const unsubscribe = sync.subscribeStatus(() => observed.push(sync.status()));
+  const exclusive = vi
+    .spyOn(environment, 'exclusive')
+    .mockRejectedValueOnce(new Error('Locks unavailable'));
+  await expect(sync.syncOnce()).rejects.toThrow('Locks unavailable');
+  expect(observed.at(-1)?.error).toBeInstanceOf(Error);
+  exclusive.mockRestore();
+  await sync.retryNow();
+  expect(observed.some((status) => status.running)).toBe(true);
+  expect(observed.at(-1)).toEqual({ running: false, error: null });
+  unsubscribe();
+});
+
 it.each([401, 403, 419])(
   'pauses on HTTP %s across restart until explicit session recovery',
   async (status) => {

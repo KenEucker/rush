@@ -259,6 +259,22 @@ observability and the integrated regression gate. RUSH-018 retains the full
 Management unavailability workflow. All nine scenario owners remain unchanged.
 Human review, required CI and merge remain necessary for task completion.
 
+### RUSH-014 implementation evidence
+
+RUSH-001–013 are merged prerequisites on production. RUSH-014 implements
+Technical §§7, 13: account-scoped global and per-record synchronization status,
+pending/failed/conflict counts, last successful sync, foreground retry and
+explicit terminal-intent recovery. Existing Server authorization, idempotency,
+ordered pull and audit remain authoritative; Dexie remains version 3.
+See [ADR 0014](decisions/0014-sync-observability.md) and
+[verification evidence](evidence/RUSH-014/README.md). Vitest covers recovery,
+runtime failures, account locking and transactional discard; production-PWA
+Playwright adds lost receipts, interrupted pull, independent-device conflicts
+and global/per-record UX to the existing offline restart/assignment-conflict gate.
+This is cross-cutting support for R-01–R-38, exercising the R-07/R-08 foundation;
+all nine functional acceptance scenario owners remain unchanged. Required CI,
+human review and merge remain necessary for task and milestone completion.
+
 ## 5. Milestone 3 — Scheduling configuration (RUSH-015–021)
 
 **Deliverable:** Management can configure every season scheduling input, while Rangers maintain default and weekly availability/preferences.

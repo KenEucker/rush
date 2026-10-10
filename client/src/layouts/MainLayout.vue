@@ -74,7 +74,8 @@
 
     <q-page-container>
       <div id="main-content" ref="mainContent" tabindex="-1">
-        <div class="connection-status q-px-md q-py-sm" role="status">
+        <SyncStatus v-if="session.workspace" />
+        <div v-else class="connection-status q-px-md q-py-sm" role="status">
           <q-icon :name="online ? 'wifi' : 'wifi_off'" class="q-mr-xs" />
           {{ online ? 'Network available' : 'Offline' }} ·
           {{
@@ -124,6 +125,7 @@ import { ApiError } from '../data/api/session';
 import { useSessionStore } from '../stores/session';
 import { useConnectivity } from '../composables/useConnectivity';
 import PwaHelp from '../components/PwaHelp.vue';
+import SyncStatus from '../components/SyncStatus.vue';
 
 const isPwa = import.meta.env.QUASAR_MODE === 'pwa';
 

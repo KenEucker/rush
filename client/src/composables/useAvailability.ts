@@ -19,34 +19,25 @@ export function useAvailability() {
       assignment_conflicts?: AssignmentConflict[];
     }[]
   >([]);
-  const pending = ref(0);
-  const lastSync = ref<string | null>(null);
   const error = ref('');
-  const syncProblem = ref('');
   let unsubscribe: (() => void) | undefined;
   watch(
     () => session.storage,
     (storage) => {
       unsubscribe?.();
       entries.value = [];
-      pending.value = 0;
-      lastSync.value = null;
-      syncProblem.value = '';
+      error.value = '';
       if (!storage) return;
       const subscription = liveQuery(async () => {
-        const [records, commands, local, state] = await Promise.all([
+        const [records, commands, local] = await Promise.all([
           storage.availability.list(),
           storage.pending.list(),
           storage.pending.records(),
-          storage.sync.state(),
         ]);
-        return { records, commands, local, state };
+        return { records, commands, local };
       }).subscribe({
-        next({ records, commands, local, state }) {
+        next({ records, commands, local }) {
           const own = commands.filter((command) => command.recordType === 'unavailability');
-          pending.value = commands.length;
-          lastSync.value = state.lastSuccessfulSyncAt;
-          syncProblem.value = state.problem?.message ?? '';
           entries.value = [
             ...records
               .filter((record) => !own.some((command) => command.recordId === record.id))
@@ -98,5 +89,5 @@ export function useAvailability() {
     };
     await session.coordinator.queueAvailability(input, id, revision);
   }
-  return { entries, pending, lastSync, error, syncProblem, save };
+  return { entries, error, save };
 }
