@@ -184,8 +184,14 @@ it.each([401, 403, 419])(
     await sync.syncOnce();
     expect(transport.push).toHaveBeenCalledTimes(1);
     await sync.resumeAfterAuthentication();
-    expect(transport.push).toHaveBeenCalledTimes(2);
-    expect(await storage.pending.list()).toEqual([]);
+    if (status === 403) {
+      expect(transport.push).toHaveBeenCalledTimes(1);
+      expect((await storage.pending.list())[0]?.state).toBe('rejected');
+      expect(await storage.pending.records()).toHaveLength(1);
+    } else {
+      expect(transport.push).toHaveBeenCalledTimes(2);
+      expect(await storage.pending.list()).toEqual([]);
+    }
   },
 );
 

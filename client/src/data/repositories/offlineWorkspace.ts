@@ -1,4 +1,4 @@
-import { Dexie, type Table } from 'dexie';
+import { Dexie, liveQuery, type Table } from 'dexie';
 import { databaseName } from '../database/database';
 import type { AccountScope } from '../database/types';
 import { storageError } from '../database/errors';
@@ -28,6 +28,17 @@ async function access<T>(work: (db: WorkspaceDirectory) => Promise<T>): Promise<
   }
 }
 export const offlineWorkspace = {
+  subscribe(listener: (value: OfflineWorkspace | undefined) => void) {
+    const db = new WorkspaceDirectory();
+    const subscription = liveQuery(() => db.workspace.get('active')).subscribe({
+      next: listener,
+      error: () => listener(undefined),
+    });
+    return () => {
+      subscription.unsubscribe();
+      db.close();
+    };
+  },
   get: () =>
     access(async (db) => {
       const value = await db.workspace.get('active');

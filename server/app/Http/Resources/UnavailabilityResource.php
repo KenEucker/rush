@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\Availability\AssignmentConflicts;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,6 +16,7 @@ class UnavailabilityResource extends JsonResource
             'starts_at' => $this->starts_at->utc()->format('Y-m-d\TH:i:s\Z'),
             'ends_at' => $this->ends_at->utc()->format('Y-m-d\TH:i:s\Z'),
             'revision' => $this->revision,
+            'assignment_conflicts' => app(AssignmentConflicts::class)->forReport($this->resource),
         ];
     }
 }

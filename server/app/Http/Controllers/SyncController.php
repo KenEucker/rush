@@ -12,11 +12,15 @@ class SyncController extends Controller
 {
     public function push(Request $request, Organization $organization, PushOperation $service): JsonResponse
     {
-        return response()->json($service->handle($request->user(), $organization, $request->all()));
+        abort_if($request->hasHeader('X-RUSH-Account') && $request->header('X-RUSH-Account') !== (string) $request->user()->id, 403, 'The signed-in account changed. Sign in again to reopen your saved work.');
+
+        return response()->json($service->handle($request->user(), $organization, $request->all(), $request->header('X-RUSH-Membership')));
     }
 
     public function pull(Request $request, Organization $organization, PullChanges $service): JsonResponse
     {
-        return response()->json($service->handle($request->user(), $organization, $request->all()));
+        abort_if($request->hasHeader('X-RUSH-Account') && $request->header('X-RUSH-Account') !== (string) $request->user()->id, 403, 'The signed-in account changed. Sign in again to reopen your saved work.');
+
+        return response()->json($service->handle($request->user(), $organization, $request->all(), $request->header('X-RUSH-Membership')));
     }
 }

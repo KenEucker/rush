@@ -37,6 +37,8 @@ export async function sessionRequest<T>(
   method = 'GET',
   body?: unknown,
   signal?: AbortSignal,
+  accountId?: number,
+  membershipId?: string,
 ): Promise<T> {
   const token = document.cookie.split('; ').find((cookie) => cookie.startsWith('XSRF-TOKEN='));
   const response = await fetch(path, {
@@ -46,6 +48,8 @@ export async function sessionRequest<T>(
     cache: 'no-store',
     headers: {
       Accept: 'application/json',
+      ...(membershipId === undefined ? {} : { 'X-RUSH-Membership': membershipId }),
+      ...(accountId === undefined ? {} : { 'X-RUSH-Account': String(accountId) }),
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { 'X-XSRF-TOKEN': decodeURIComponent(token.slice('XSRF-TOKEN='.length)) } : {}),
     },

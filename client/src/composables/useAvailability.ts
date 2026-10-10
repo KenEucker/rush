@@ -1,7 +1,7 @@
 import { liveQuery } from 'dexie';
 import { onScopeDispose, ref, watch } from 'vue';
 import { useSessionStore } from '../stores/session';
-import type { AvailabilityInput } from '../data/api/availability';
+import type { AvailabilityInput, AssignmentConflict } from '../data/api/availability';
 import { localInstant, formatInterval } from '../domain/availability';
 
 export function useAvailability() {
@@ -16,6 +16,7 @@ export function useAvailability() {
       message: string;
       operationId?: string;
       serverRange?: string;
+      assignment_conflicts?: AssignmentConflict[];
     }[]
   >([]);
   const pending = ref(0);
@@ -28,6 +29,9 @@ export function useAvailability() {
     (storage) => {
       unsubscribe?.();
       entries.value = [];
+      pending.value = 0;
+      lastSync.value = null;
+      syncProblem.value = '';
       if (!storage) return;
       const subscription = liveQuery(async () => {
         const [records, commands, local, state] = await Promise.all([
@@ -57,6 +61,7 @@ export function useAvailability() {
                 starts_at: typeof value?.starts_at === 'string' ? value.starts_at : '',
                 ends_at: typeof value?.ends_at === 'string' ? value.ends_at : '',
                 revision: command.expectedRevision,
+                assignment_conflicts: current?.assignment_conflicts ?? [],
                 state: command.state,
                 message: command.problem?.message ?? '',
                 operationId: command.operationId,

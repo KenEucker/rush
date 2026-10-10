@@ -57,6 +57,23 @@
           <q-item-section>
             <q-item-label>{{ formatInterval(entry.starts_at, entry.ends_at) }}</q-item-label>
             <q-item-label class="q-mt-sm">{{ labels[entry.state] ?? entry.state }}</q-item-label>
+            <q-banner
+              v-if="entry.assignment_conflicts?.length"
+              class="bg-orange-1 q-mt-sm"
+              role="alert"
+              data-testid="assignment-conflict"
+            >
+              <strong>Official assignment conflict — Management action needed</strong>
+              <p>
+                The accepted unavailability overlaps this assignment. The official assignment is
+                unchanged and must not be treated as reliable coverage. Contact Management to
+                resolve it.
+              </p>
+              <div v-for="assignment in entry.assignment_conflicts" :key="assignment.id">
+                {{ formatInterval(assignment.starts_at, assignment.ends_at) }} · Assignment revision
+                {{ assignment.revision }}
+              </div>
+            </q-banner>
             <q-item-label v-if="entry.message" caption>{{ entry.message }}</q-item-label>
             <q-item-label
               v-if="entry.serverRange && ['conflict', 'rejected'].includes(entry.state)"

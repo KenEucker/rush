@@ -63,7 +63,12 @@ export function syncRepository(db: AccountDatabase) {
           } else {
             await db.pendingCommands.update(parsed.operation_id, {
               state: parsed.status,
-              problem: { code: parsed.error.code, message: parsed.error.message },
+              problem: {
+                code: parsed.error.code,
+                message: [parsed.error.message, ...Object.values(parsed.error.errors).flat()].join(
+                  ' ',
+                ),
+              },
             });
           }
         }),
@@ -95,7 +100,7 @@ export function syncRepository(db: AccountDatabase) {
                     change.record_id,
                   );
                   const cached = await db.unavailabilities.get(change.record_id);
-                  if (!cached || value.revision > cached.value.revision)
+                  if (!cached || value.revision >= cached.value.revision)
                     await db.unavailabilities.put({ id: change.record_id, value, cachedAt: now });
                 }
                 const pending = await db.pendingCommands

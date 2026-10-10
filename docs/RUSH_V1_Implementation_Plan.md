@@ -239,6 +239,26 @@ RUSH-013 retains the conflicting official-assignment and expanded account-securi
 proof; RUSH-014 retains global observability/recovery; RUSH-018 completes R-07.
 All nine scenario owners remain unchanged. Human review, CI and merge are required.
 
+### RUSH-013 implementation evidence
+
+RUSH-001–012 are merged prerequisites on production. RUSH-013 proves R-07/R-08's
+conflict foundation and Technical §§7–8 with a real audited Management assignment
+change while a Ranger is offline. Accepted unavailability and official assignments
+remain separate; ordered pull flags and clears assignment overlaps without
+rewriting either record. Account/membership-bound sync, role-loss/session locking,
+cross-tab cache isolation and explicit pending-work preservation at logout extend
+the existing Dexie/session lifecycle.
+See [ADR 0013](decisions/0013-conflict-account-security.md),
+[contract](contracts/assignment-conflicts.md), and
+[verification evidence](evidence/RUSH-013/README.md).
+Pest covers authorization, audit, overlap/revision boundaries and account bindings;
+Vitest covers durable conflicts, rejection explanations and account lifecycle;
+production-PWA Playwright covers restart, actual manager changes, logout, account
+switching and expired sessions on desktop/mobile. RUSH-014 retains global
+observability and the integrated regression gate. RUSH-018 retains the full
+Management unavailability workflow. All nine scenario owners remain unchanged.
+Human review, required CI and merge remain necessary for task completion.
+
 ## 5. Milestone 3 — Scheduling configuration (RUSH-015–021)
 
 **Deliverable:** Management can configure every season scheduling input, while Rangers maintain default and weekly availability/preferences.

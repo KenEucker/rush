@@ -96,6 +96,20 @@
           <q-banner role="alert" class="bg-red-1 text-negative q-mb-md">{{ error }}</q-banner>
           <q-btn label="Retry connection" color="primary" @click="loadSession" />
         </q-page>
+        <q-page
+          v-else-if="
+            session.storageProblem &&
+            !session.identity &&
+            !session.workspace &&
+            route.meta.requiresSession
+          "
+          tabindex="-1"
+          class="q-pa-lg"
+        >
+          <h1 class="text-h4" tabindex="-1">Session needs attention</h1>
+          <q-banner role="alert" class="bg-orange-1 q-mb-md">{{ session.storageProblem }}</q-banner>
+          <q-btn label="Sign in again" color="primary" to="/sign-in" />
+        </q-page>
         <router-view v-else />
       </div>
     </q-page-container>

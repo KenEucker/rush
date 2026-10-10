@@ -1,5 +1,11 @@
 import { ApiError } from './http';
 
+export interface AssignmentConflict {
+  id: string;
+  revision: number;
+  starts_at: string;
+  ends_at: string;
+}
 export interface Unavailability {
   id: string;
   organization_id: string;
@@ -7,6 +13,7 @@ export interface Unavailability {
   starts_at: string;
   ends_at: string;
   revision: number;
+  assignment_conflicts?: AssignmentConflict[];
 }
 export interface AvailabilityInput {
   membership_id: string;
@@ -57,7 +64,34 @@ export function parseUnavailability(
       'invalid_response',
     );
   }
+  const conflicts = value.assignment_conflicts;
+  if (
+    conflicts !== undefined &&
+    (!Array.isArray(conflicts) ||
+      conflicts.some(
+        (item) =>
+          !item ||
+          typeof item.id !== 'string' ||
+          !uuid.test(item.id) ||
+          !Number.isInteger(item.revision) ||
+          item.revision < 1 ||
+          !validInstant(item.starts_at) ||
+          !validInstant(item.ends_at) ||
+          item.ends_at <= item.starts_at,
+      ))
+  )
+    throw new ApiError(200, 'Invalid assignment conflict data.', 'invalid_response');
   return {
+    ...(conflicts === undefined
+      ? {}
+      : {
+          assignment_conflicts: conflicts.map(({ id, revision, starts_at, ends_at }) => ({
+            id,
+            revision,
+            starts_at,
+            ends_at,
+          })),
+        }),
     id,
     organization_id: organizationId,
     membership_id: value.membership_id,

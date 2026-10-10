@@ -20,7 +20,17 @@
       <p v-if="!session.identity.memberships.length">
         You have no active organization membership. Contact Management.
       </p>
-      <q-btn label="Sign out" outline color="primary" :loading="signingOut" @click="signOut" />
+      <q-btn label="Sign out" outline color="primary" :loading="signingOut" @click="signOut()" />
+      <q-banner v-if="pendingWarning" class="bg-orange-1 q-mt-md" role="alert">
+        Unsent or unresolved work is saved on this device for your account. Signing out will hide it
+        until you sign in to this account again. Do not clear browser storage.
+        <q-btn
+          label="Keep saved work and sign out"
+          color="primary"
+          @click="signOut(true)"
+          :loading="signingOut"
+        />
+      </q-banner>
       <p class="text-caption q-mt-lg">An internet connection is required to sign out.</p>
     </template>
   </q-page>
@@ -37,16 +47,18 @@ const session = useSessionStore();
 const router = useRouter();
 const signingOut = ref(false);
 const error = ref('');
-async function signOut() {
+const pendingWarning = ref(false);
+async function signOut(preservePending = false) {
   signingOut.value = true;
   error.value = '';
   try {
-    await session.signOut();
+    await session.signOut({ preservePending });
     await router.replace('/sign-in');
   } catch (cause) {
+    pendingWarning.value = cause instanceof PendingWorkError;
     error.value =
       cause instanceof PendingWorkError
-        ? 'You have saved changes waiting for the Server. Synchronize or resolve them before signing out.'
+        ? 'You have saved changes waiting for the Server. You can keep them safely for your next sign-in.'
         : cause instanceof ApiError
           ? cause.message
           : 'Sign-out was not confirmed. Reconnect and try again.';

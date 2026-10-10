@@ -203,6 +203,84 @@ it('migrates a released v2 partition without losing pending data or checkpoint',
   expect((await storage.metadata.get())?.schemaVersion).toBe(3);
 });
 
+it('retains field-level rejection explanations and refuses malformed assignment conflict data', async () => {
+  const storage = await open();
+  const operation = await stageAvailability(storage, input);
+  await storage.sync.settle({
+    operation_id: operation.operation_id,
+    status: 'rejected',
+    error: {
+      code: 'validation_failed',
+      message: 'Check your report.',
+      errors: { ends_at: ['The end must be after start.'] },
+    },
+  });
+  storage.close();
+  const reopened = await open();
+  expect((await reopened.pending.records())[0]?.value).toEqual(input);
+  expect((await reopened.pending.list())[0]?.problem?.message).toContain(
+    'The end must be after start.',
+  );
+  expect(() =>
+    parseUnavailability(
+      {
+        ...input,
+        id: operation.record_id,
+        organization_id: scope.organizationId,
+        revision: 1,
+        assignment_conflicts: [
+          { id: 'invalid', revision: 1, starts_at: input.starts_at, ends_at: input.ends_at },
+        ],
+      },
+      scope.organizationId,
+      operation.record_id,
+    ),
+  ).toThrow();
+});
+
+it('refreshes assignment conflicts at the same report revision and removes resolved conflicts', async () => {
+  const storage = await open();
+  const operation = await stageAvailability(storage, input);
+  const base = {
+    ...input,
+    id: operation.record_id,
+    organization_id: scope.organizationId,
+    revision: 1,
+  };
+  const conflict = {
+    id: crypto.randomUUID(),
+    revision: 2,
+    starts_at: input.starts_at,
+    ends_at: input.ends_at,
+  };
+  for (const [checkpoint, expected, conflicts] of [
+    ['one', null, [conflict]],
+    ['two', 'one', []],
+  ] as const) {
+    await storage.sync.applyPage(
+      expected,
+      {
+        changes: [
+          {
+            sequence: 1,
+            record_type: 'unavailability',
+            record_id: base.id,
+            value: { ...base, assignment_conflicts: [...conflicts] },
+          },
+        ],
+        checkpoint,
+        has_more: false,
+      },
+      'now',
+    );
+    expect((await storage.availability.list())[0]?.value.assignment_conflicts).toEqual(conflicts);
+  }
+  await storage.clearConfirmed();
+  expect(await storage.availability.list()).toEqual([]);
+  expect(await storage.checkpoints.get('profiles')).toBeUndefined();
+  expect(await storage.pending.records()).toHaveLength(1);
+});
+
 it('retains only a scope locator in the offline workspace directory', async () => {
   const value = {
     key: 'active' as const,
