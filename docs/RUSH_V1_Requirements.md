@@ -22,7 +22,7 @@ The application should:
 
 ## 2. Season, phases, shifts, and coverage
 
-**R-01 Season and phases.** Management creates a season containing dated operational phases. Each phase has its own coverage model, staffing requirements, shift definitions, and scheduled-hours policies. Phase configurations can differ.
+**R-01 Season and phases.** Management creates a season containing dated operational phases. Season and phase end dates are inclusive and must be at least the calendar day after their respective start dates (owner-approved October 10, 2026). Each phase has its own coverage model, staffing requirements, shift definitions, and scheduled-hours policies. Phase configurations can differ.
 
 **R-02 Configurable shifts.** Management defines shift start times and durations. The recent norm is three eight-hour shifts daily, but the app must not hardcode that pattern. Schedule generation assigns **whole shifts** by default; management may manually create partial assignments.
 

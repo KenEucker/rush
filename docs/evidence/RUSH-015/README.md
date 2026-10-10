@@ -74,6 +74,34 @@ follow-up adds two browser cases and requires a new CI run on the updated PR.
 
 ## Acceptance mapping
 
+### Strict end-date minimum follow-up
+
+The owner explicitly approved a strict next-day end minimum for seasons and
+phases. The shared save service rejects same-day ends on creates and updates;
+native date inputs update their minimum when the start changes and suggest it
+when an empty end is focused. Existing entered ends are preserved. Phase ends
+are capped at the season end, and new phase starts need room for their minimum
+end. No schema, dependency or offline/sync changes are needed. Existing one-day
+records remain readable and require correction before the next save.
+
+- Focused `php vendor/bin/pest tests/Feature/SeasonConfigurationTest.php --compact`:
+  **22 passed, 156 assertions**.
+- Full `php vendor/bin/pest --compact`: **114 passed, 802 assertions,
+  3 PostgreSQL-only skips**.
+- `npx playwright test --config playwright.integration.config.ts seasons.spec.ts`:
+  **6 passed** on isolated Laravel/SQLite, desktop/mobile. Covers strict bounds,
+  empty-end suggestions, clearing, preservation, leap/year/DST transitions and
+  insufficient space before the season ends. An initial desktop failure exposed
+  native date segments emitting focus again while clearing; repeated focus within
+  the same field no longer reapplies a default.
+- Pint, TypeScript and ESLint: **passed**. Production server image build and
+  local `/api/v1/health` check: **passed**.
+- Prior CI run 38072624092 passed Server/Client/conventions and **27/28 E2E**;
+  its mobile PWA login hit the existing shared IP throttle (the artifact showed
+  "Too many attempts"). That test now respects one bounded Retry-After delay,
+  as the season fixture already does. Production limits remain unchanged.
+  A full-stack CI rerun is required for this test adjustment and the new changes.
+
 | Criterion | Evidence |
 | --- | --- |
 | Create/edit organization seasons and dated phases | SaveSeason, SeasonScreen, API, SeasonConfigurationTest, seasons.spec.ts |

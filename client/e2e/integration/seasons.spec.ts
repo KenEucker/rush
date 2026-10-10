@@ -103,10 +103,10 @@ test('Management configures seasons and phases with validation and stale-edit re
   });
   await test.info().attach('season-configuration', { body: screenshot, contentType: 'image/png' });
   // Defaults also work when extending an existing season after save/reload.
-  await page.getByLabel('Phase ends on', { exact: true }).last().fill('2026-11-29');
+  await page.getByLabel('Phase ends on', { exact: true }).last().fill('2026-11-28');
   await page.getByRole('link', { name: 'Add phase', exact: true }).click();
   await expect(page.getByLabel('Phase starts on', { exact: true }).last()).toHaveValue(
-    '2026-11-30',
+    '2026-11-29',
   );
   await expect(page.getByLabel('Phase starts on', { exact: true }).nth(1)).toHaveValue(
     '2026-06-15',
@@ -136,9 +136,9 @@ test('New phase dates follow calendar boundaries without changing existing input
   await ends.first().fill('2028-02-28');
   await add.click();
   await expect(starts.last()).toHaveValue('2028-02-29');
-  await ends.last().fill('2028-02-29');
+  await ends.last().fill('2028-03-01');
   await add.click();
-  await expect(starts.last()).toHaveValue('2028-03-01');
+  await expect(starts.last()).toHaveValue('2028-03-02');
 
   // A missing preceding end must not fall back to the season start and overlap it.
   await add.click();
@@ -164,4 +164,68 @@ test('New phase dates follow calendar boundaries without changing existing input
   await ends.last().fill('2028-01-30');
   await add.click();
   await expect(starts.last()).toHaveValue('');
+});
+
+test('End-date pickers begin after their start and enforce the minimum without overwriting edits', async ({
+  page,
+}) => {
+  await page.goto('/admin/main');
+  await page.getByRole('link', { name: /Seasons and phases —/ }).click();
+  const seasonStart = page.getByLabel('Season starts on', { exact: false });
+  const seasonEnd = page.getByLabel('Season ends on (inclusive)', { exact: false });
+  const starts = page.getByLabel('Phase starts on', { exact: true });
+  const ends = page.getByLabel('Phase ends on', { exact: true });
+  const add = page.getByRole('link', { name: 'Add phase', exact: true });
+
+  await seasonEnd.focus();
+  await expect(seasonEnd).toHaveValue('');
+  await seasonStart.fill('2028-02-28');
+  await seasonEnd.focus();
+  await expect(seasonEnd).toHaveValue('2028-02-29');
+  await seasonEnd.fill('2028-02-28');
+  expect(await seasonEnd.evaluate((input: HTMLInputElement) => input.validity.rangeUnderflow)).toBe(
+    true,
+  );
+  await seasonEnd.fill('2028-12-31');
+
+  await add.click();
+  await ends.last().focus();
+  await expect(ends.last()).toHaveValue('2028-02-29');
+  await starts.last().fill('2028-03-12');
+  await expect(ends.last()).toHaveValue('2028-02-29');
+  await expect(ends.last()).toHaveAttribute('min', '2028-03-13');
+  expect(
+    await ends.last().evaluate((input: HTMLInputElement) => input.validity.rangeUnderflow),
+  ).toBe(true);
+  await ends.last().focus();
+  await ends.last().fill('');
+  await expect(ends.last()).toHaveValue('');
+  await starts.last().focus();
+  await ends.last().focus();
+  await expect(ends.last()).toHaveValue('2028-03-13');
+  await ends.last().fill('2028-04-30');
+  await starts.last().fill('2028-03-14');
+  await ends.last().focus();
+  await expect(ends.last()).toHaveValue('2028-04-30');
+
+  // There must be room for both the new start and its next-day minimum end.
+  await ends.last().fill('2028-12-30');
+  await add.click();
+  await expect(starts.last()).toHaveValue('');
+  await starts.last().fill('2028-12-31');
+  await ends.last().focus();
+  await expect(ends.last()).toHaveValue('');
+  await expect(ends.last()).toHaveAttribute('min', '2029-01-01');
+  await expect(ends.last()).toHaveAttribute('max', '2028-12-31');
+
+  await seasonStart.fill('2028-12-31');
+  await seasonEnd.focus();
+  await seasonEnd.fill('');
+  await expect(seasonEnd).toHaveValue('');
+  await seasonStart.focus();
+  await seasonEnd.focus();
+  await expect(seasonEnd).toHaveValue('2029-01-01');
+  await seasonStart.fill('');
+  await expect(seasonEnd).toHaveAttribute('min', '');
+  await expect(seasonEnd).toHaveValue('2029-01-01');
 });

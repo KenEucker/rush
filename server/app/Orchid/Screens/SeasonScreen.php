@@ -59,7 +59,8 @@ class SeasonScreen extends Screen
                 Input::make('configuration.expected_revision')->type('hidden'),
                 Input::make('configuration.name')->title('Season name')->required()->maxlength(120),
                 Input::make('configuration.starts_on')->title('Season starts on')->type('date')->required(),
-                Input::make('configuration.ends_on')->title('Season ends on (inclusive)')->type('date')->required(),
+                Input::make('configuration.ends_on')->title('Season ends on (inclusive)')->type('date')->required()
+                    ->help('Choose at least the day after the season starts.'),
                 Select::make('configuration.timezone')->title('Season time zone')
                     ->options(array_combine(\DateTimeZone::listIdentifiers(), \DateTimeZone::listIdentifiers()))
                     ->empty('Choose a time zone')->required(),
@@ -73,7 +74,7 @@ class SeasonScreen extends Screen
                         'ends_on' => Input::make()->type('date')->set('aria-label', 'Phase ends on')->required(),
                         'id' => Input::make()->type('hidden'),
                     ])->maxRows(100)->addRowLabel('Add phase')
-                    ->help('New phases start on the season start date or the day after the preceding phase ends. You can change these dates. Phases cannot overlap or extend outside the season. Dates without a phase remain unconfigured. Saved phases must be retained; you can edit their dates together.'),
+                    ->help('New phases start on the season start date or the day after the preceding phase ends. You can change these dates. Each phase must end at least the day after it starts. Phases cannot overlap or extend outside the season. Dates without a phase remain unconfigured. Saved phases must be retained; you can edit their dates together.'),
                 Input::make('configuration.reason')->title('Reason for change')->required()->maxlength(500),
             ]),
         ];

@@ -12,13 +12,23 @@ are rejected, and repeated times require an explicit UTC offset. Employment and
 pay rules remain with RUSH-017/037. This resolves the calendar portion of
 Requirements §11 and Implementation Plan §11.3.
 
+In the same chat on October 10, 2026, the owner explicitly chose a strict
+next-day minimum for season and phase end dates, rather than a picker suggestion
+alone. Inclusive end dates therefore cannot equal their start dates. SaveSeason
+enforces this for both Orchid and API creates/updates. Existing one-day records
+are not rewritten; they remain readable but must be corrected before the next
+aggregate save. No schema or historical audit migration is needed; existing
+database checks still guard reversed ranges and the shared service applies the
+stricter product rule.
+
 ## Model and invariants
 
 - A UUID season belongs to one organization, with a name, inclusive start/end
   calendar dates, IANA zone, ISO weekday (1 Monday through 7 Sunday), and revision.
   There is no implicit device, server or organization-zone fallback.
 - UUID phases belong to the season; names and inclusive ranges are editable.
-  Ranges must be ordered, within the season, and nonoverlapping. Adjacent phases
+  Ends must follow starts by at least one calendar day, within the season, and
+  ranges must be nonoverlapping. Adjacent phases
   therefore start the day after the previous inclusive end. A season may initially
   have no phases; gaps explicitly mean unconfigured dates, never inherited coverage.
   Season overlap across separately selected seasons is not prohibited.
@@ -66,6 +76,13 @@ home. Named actions, date fields, time-zone/week selectors and phase rows invoke
 the same SaveSeason service as the API. Validation keeps form input; a stale edit
 keeps its original revision and instructs the manager to compare in another tab.
 The administrator deliberately reapplies changes against the current revision.
+
+Native end-date inputs use a minimum of start + one calendar day. Focusing an
+empty end field suggests that minimum when it fits the season's end; phase end
+pickers are capped at the entered season end. Start changes update the limits
+without overwriting an existing end. New phase starts are only suggested when
+there is room for the following day's minimum end. Calendar-day arithmetic is
+independent of browser time zone and daylight-saving transitions.
 
 Orchid administration requires the Server under Technical §7.4. No Client
 operational store, Dexie migration, Workbox data cache, offline command or new

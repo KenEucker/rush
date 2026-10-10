@@ -67,6 +67,36 @@ it('allows empty seasons and explicit unconfigured gaps but never silently remov
     $this->assertDatabaseCount('season_changes', 2);
 });
 
+it('rejects same-day ends on create and update without changing records or audit', function (string $end, string $start, string $message) {
+    $invalid = $this->input;
+    data_set($invalid, $end, data_get($invalid, $start));
+    $this->actingAs($this->manager->user)->putJson($this->url, $invalid)->assertUnprocessable()
+        ->assertJsonValidationErrors([$end])->assertJsonFragment([$end => [$message]]);
+    $this->assertDatabaseCount('seasons', 0);
+    $this->assertDatabaseCount('season_changes', 0);
+
+    $this->putJson($this->url, $this->input)->assertCreated();
+    $this->putJson($this->url, [...$invalid, 'expected_revision' => 1])->assertUnprocessable()
+        ->assertJsonValidationErrors([$end]);
+    $this->getJson($this->url)->assertOk()->assertJsonPath('revision', 1)
+        ->assertJsonPath($end, data_get($this->input, $end));
+    $this->assertDatabaseCount('season_changes', 1);
+})->with([
+    ['ends_on', 'starts_on', 'The season end date must be at least the day after its start date.'],
+    ['phases.0.ends_on', 'phases.0.starts_on', 'The phase end date must be at least the day after its start date.'],
+    ['phases.1.ends_on', 'phases.1.starts_on', 'The phase end date must be at least the day after its start date.'],
+]);
+
+it('accepts the next calendar day as the minimum season and phase end', function () {
+    $input = [...$this->input, 'starts_on' => '2028-02-28', 'ends_on' => '2028-02-29',
+        'phases' => [['name' => 'Leap-day phase', 'starts_on' => '2028-02-28', 'ends_on' => '2028-02-29']]];
+    $this->actingAs($this->manager->user)->putJson($this->url, $input)->assertCreated()
+        ->assertJsonPath('ends_on', '2028-02-29')->assertJsonPath('phases.0.ends_on', '2028-02-29');
+    $this->assertDatabaseCount('seasons', 1);
+    $this->assertDatabaseCount('phases', 1);
+    $this->assertDatabaseCount('season_changes', 1);
+});
+
 it('generates phase identifiers and refuses duplicate or foreign phase identities', function () {
     $this->input['phases'][0]['id'] = null;
     $this->input['phases'][1]['id'] = null;

@@ -31,7 +31,7 @@ class SaveSeason
                 'expected_revision' => ['present', 'nullable', 'integer', 'min:1', 'max:2147483646'],
                 'name' => ['required', 'string', 'max:120'],
                 'starts_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:1900-01-01', 'before_or_equal:9998-12-31'],
-                'ends_on' => ['required', 'date_format:Y-m-d', 'after_or_equal:starts_on', 'before_or_equal:9998-12-31'],
+                'ends_on' => ['required', 'date_format:Y-m-d', 'after:starts_on', 'before_or_equal:9998-12-31'],
                 'timezone' => ['required', 'string', Rule::in(\DateTimeZone::listIdentifiers())],
                 'week_starts_on' => ['required', 'integer', 'between:1,7'],
                 'phases' => ['present', 'array', 'max:100'],
@@ -39,8 +39,11 @@ class SaveSeason
                 'phases.*.id' => ['nullable', 'uuid', 'distinct'],
                 'phases.*.name' => ['required', 'string', 'max:120'],
                 'phases.*.starts_on' => ['required', 'date_format:Y-m-d'],
-                'phases.*.ends_on' => ['required', 'date_format:Y-m-d'],
+                'phases.*.ends_on' => ['required', 'date_format:Y-m-d', 'after:phases.*.starts_on'],
                 'reason' => ['required', 'string', 'max:500'],
+            ], [
+                'ends_on.after' => 'The season end date must be at least the day after its start date.',
+                'phases.*.ends_on.after' => 'The phase end date must be at least the day after its start date.',
             ])->validate();
             $season = Season::query()->lockForUpdate()->find($id);
             abort_if($season && $season->organization_id !== $organization->id, 404);
@@ -58,7 +61,7 @@ class SaveSeason
                 if (! empty($phase['id']) && ! $existing->has($phase['id']) && Phase::query()->whereKey($phase['id'])->exists()) {
                     throw ValidationException::withMessages(["phases.$index.id" => 'This phase identifier is unavailable.']);
                 }
-                if ($phase['starts_on'] < $values['starts_on'] || $phase['ends_on'] > $values['ends_on'] || $phase['ends_on'] < $phase['starts_on']) {
+                if ($phase['starts_on'] < $values['starts_on'] || $phase['ends_on'] > $values['ends_on']) {
                     throw ValidationException::withMessages(["phases.$index.starts_on" => 'Each phase must be an ordered date range within the season.']);
                 }
                 if ($previousEnd !== null && $phase['starts_on'] <= $previousEnd) {

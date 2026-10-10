@@ -53,12 +53,49 @@
                             }
                         }
                     }
+                    this.updateEndDates();
                 });
                 this.observer.observe(rows, { childList: true });
+                this.refreshEndDates = () => this.updateEndDates();
+                this.suggestEndDate = (event) => {
+                    const end = event.target;
+                    const previous = this.focusedField;
+                    this.focusedField = end;
+                    // Native date segments can emit focus again while a focused field is cleared.
+                    if (end === previous || !(end instanceof HTMLInputElement)
+                        || end.form !== this.form || !end.name.endsWith('[ends_on]')) return;
+                    this.updateEndDates();
+                    if (!end.value && end.min && end.min <= end.max) {
+                        end.value = end.min;
+                        end.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                };
+                this.form.addEventListener('input', this.refreshEndDates);
+                this.form.addEventListener('change', this.refreshEndDates);
+                document.addEventListener('focusin', this.suggestEndDate);
+                this.updateEndDates();
             }
 
             disconnect() {
                 this.observer.disconnect();
+                this.form.removeEventListener('input', this.refreshEndDates);
+                this.form.removeEventListener('change', this.refreshEndDates);
+                document.removeEventListener('focusin', this.suggestEndDate);
+            }
+
+            dateString(day) {
+                if (!Number.isFinite(day)) return '';
+                const date = new Date(day).toISOString().slice(0, 10);
+                return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '';
+            }
+
+            updateEndDates() {
+                const seasonEnd = this.form.elements.namedItem('configuration[ends_on]');
+                for (const end of this.form.querySelectorAll('input[name$="[ends_on]"]')) {
+                    const start = this.form.elements.namedItem(end.name.replace('[ends_on]', '[starts_on]'));
+                    end.min = this.dateString(start.valueAsNumber + 86400000);
+                    end.max = end === seasonEnd ? '9998-12-31' : seasonEnd.value || '9998-12-31';
+                }
             }
 
             defaultStart(row) {
@@ -72,10 +109,10 @@
                 const suggestedDay = previousEnd ? previousEnd.valueAsNumber + 86400000 : seasonStart.valueAsNumber;
                 if (!Number.isFinite(suggestedDay)
                     || suggestedDay < seasonStart.valueAsNumber
-                    || suggestedDay > seasonEnd.valueAsNumber) return;
+                    || suggestedDay + 86400000 > seasonEnd.valueAsNumber) return;
 
-                const suggestedDate = new Date(suggestedDay).toISOString().slice(0, 10);
-                if (!/^\d{4}-\d{2}-\d{2}$/.test(suggestedDate)) return;
+                const suggestedDate = this.dateString(suggestedDay);
+                if (!suggestedDate) return;
                 start.value = suggestedDate;
                 start.dispatchEvent(new Event('change', { bubbles: true }));
             }

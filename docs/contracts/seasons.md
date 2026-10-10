@@ -39,7 +39,9 @@ type SaveSeason = Omit<Season, 'id' | 'organization_id' | 'revision' | 'phases'>
 PUT supplies the complete aggregate, including unchanged phases; an empty array
 is valid for a new/empty season. Existing phase IDs cannot disappear. A new phase
 may omit its ID for Server generation. Fields are allowlisted; roles, ownership
-and revisions cannot be mass-assigned. Dates are inclusive, valid and ordered;
+and revisions cannot be mass-assigned. Dates are inclusive and valid; season and
+phase ends must be strictly after their respective starts (at least the next
+calendar day). Same-day ends return 422 on `ends_on` or `phases.{index}.ends_on`;
 phases must fit within the season without overlap. Names max 120 characters,
 reason max 500, max 100 phases. UUID collisions with another season's phase are
 rejected. Configuration gaps remain explicitly unconfigured.
