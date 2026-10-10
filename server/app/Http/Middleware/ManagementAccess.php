@@ -16,7 +16,9 @@ class ManagementAccess
 
         // Orchid's generic relation, attachment and account tools are not organization scoped.
         // Enable new routes only with their own domain policies in the owning task.
-        abort_unless($request->isMethod('GET') && $request->routeIs('platform.index', 'platform.main'), 404);
+        $seasonRoute = $request->routeIs('platform.seasons') &&
+            ($request->isMethod('GET') || ($request->isMethod('POST') && $request->route('method') === 'save'));
+        abort_unless($seasonRoute || ($request->isMethod('GET') && $request->routeIs('platform.index', 'platform.main')), 404);
 
         return $next($request);
     }
