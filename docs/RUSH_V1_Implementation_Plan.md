@@ -304,7 +304,9 @@ RUSH-017/037. See [ADR 0015](decisions/0015-season-calendar-policy.md),
 Pest covers invariants, authorization, audit/rollback, calendar edges and
 PostgreSQL concurrent managers; Playwright covers desktop/mobile Orchid forms,
 validation and stale input recovery. Orchid remains online; no Dexie or sync
-schema changes. Scenarios 1–2 retain their remaining owners, as do all nine
+schema changes. New phase rows suggest the season start or the day after the
+preceding inclusive phase end, with desktop/mobile regression coverage for
+calendar boundaries and preservation of entered dates. Scenarios 1–2 retain their remaining owners, as do all nine
 scenario assignments. Human review, required CI and merge remain necessary.
 
 ## 6. Milestone 4 — Schedule generation (RUSH-022–028)

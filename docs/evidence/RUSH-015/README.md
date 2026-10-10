@@ -47,6 +47,31 @@ Captured from the successful desktop/mobile workflow using seeded fixture accoun
 and visually inspected: [desktop](desktop-season.png), [mobile](mobile-season.png).
 The browser test also attaches screenshots to its Playwright report for CI review.
 
+## Phase creation defaults follow-up
+
+R-01: Adding the first phase defaults its start to the entered season start;
+subsequent rows default to the calendar day after the preceding row's inclusive
+end. These are editable suggestions applied only when adding a row. Saved,
+manually entered and validation-recovered dates are preserved. Missing source
+dates and suggestions outside entered season bounds leave the new start blank.
+Calendar-day arithmetic uses date-input UTC values, independent of browser DST.
+No database, API, dependency or sync changes are required.
+
+- `php vendor/bin/pest tests/Feature/SeasonConfigurationTest.php --compact`:
+  **18 passed, 108 assertions**.
+- `npx playwright test --config playwright.integration.config.ts seasons.spec.ts`
+  from client: **4 passed**, desktop/mobile on isolated Laravel/SQLite, including
+  leap day, month/year/DST transitions, missing dates, season bounds, row removal,
+  editable defaults, saved-season extension, validation and stale-edit recovery.
+- `php vendor/bin/pint --dirty --format agent`, `npx eslint e2e/integration/seasons.spec.ts`,
+  `npx prettier --write e2e/integration/seasons.spec.ts`, and `npx vue-tsc --noEmit`:
+  **passed**. The initial sandboxed Pest run could not open its bootstrap;
+  the reported passing run used normal local filesystem access.
+
+The previous full CI run 38070577975 passed all four jobs, including **113 Pest
+tests / 776 assertions** and **26 production-stack E2E tests**. The phase-default
+follow-up adds two browser cases and requires a new CI run on the updated PR.
+
 ## Acceptance mapping
 
 | Criterion | Evidence |

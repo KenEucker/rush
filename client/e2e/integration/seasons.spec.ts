@@ -2,10 +2,9 @@ import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import type { SessionIdentity } from '../../src/data/api/session';
 
-test('Management configures seasons and phases with validation and stale-edit recovery', async ({
-  page,
-  context,
-}) => {
+test.use({ timezoneId: 'America/Los_Angeles' });
+
+test.beforeEach(async ({ context }) => {
   test.setTimeout(90_000);
   await context.request.get('/sanctum/csrf-cookie');
   const cookie = (await context.cookies()).find((item) => item.name === 'XSRF-TOKEN');
@@ -26,6 +25,12 @@ test('Management configures seasons and phases with validation and stale-edit re
     login = await signIn();
   }
   expect(login.status()).toBe(200);
+});
+
+test('Management configures seasons and phases with validation and stale-edit recovery', async ({
+  page,
+  context,
+}) => {
   const identity = (await (await context.request.get('/api/v1/session')).json()) as SessionIdentity;
   const organization = identity.memberships[0]!.organization.id;
   await page.goto('/admin/main');
@@ -42,6 +47,9 @@ test('Management configures seasons and phases with validation and stale-edit re
     ['Full staffing', '2026-05-31', '2026-11-30'],
   ]) {
     await page.getByRole('link', { name: 'Add phase', exact: true }).click();
+    await expect(page.getByLabel('Phase starts on', { exact: true }).last()).toHaveValue(
+      name === 'Low staffing' ? '2026-03-01' : '2026-06-01',
+    );
     await page.getByRole('textbox', { name: 'Phase name', exact: true }).last().fill(name!);
     await page.getByLabel('Phase starts on', { exact: true }).last().fill(start!);
     await page.getByLabel('Phase ends on', { exact: true }).last().fill(end!);
@@ -94,4 +102,66 @@ test('Management configures seasons and phases with validation and stale-edit re
     fullPage: true,
   });
   await test.info().attach('season-configuration', { body: screenshot, contentType: 'image/png' });
+  // Defaults also work when extending an existing season after save/reload.
+  await page.getByLabel('Phase ends on', { exact: true }).last().fill('2026-11-29');
+  await page.getByRole('link', { name: 'Add phase', exact: true }).click();
+  await expect(page.getByLabel('Phase starts on', { exact: true }).last()).toHaveValue(
+    '2026-11-30',
+  );
+  await expect(page.getByLabel('Phase starts on', { exact: true }).nth(1)).toHaveValue(
+    '2026-06-15',
+  );
+});
+
+test('New phase dates follow calendar boundaries without changing existing input', async ({
+  page,
+}) => {
+  await page.goto('/admin/main');
+  await page.getByRole('link', { name: /Seasons and phases —/ }).click();
+  const seasonStart = page.getByLabel('Season starts on', { exact: false });
+  const seasonEnd = page.getByLabel('Season ends on (inclusive)', { exact: false });
+  const starts = page.getByLabel('Phase starts on', { exact: true });
+  const ends = page.getByLabel('Phase ends on', { exact: true });
+  const add = page.getByRole('link', { name: 'Add phase', exact: true });
+  const remove = page.getByRole('link', { name: 'Remove row', exact: true });
+
+  await add.click();
+  await expect(starts.last()).toHaveValue('');
+  await remove.last().click();
+  await seasonStart.fill('2028-02-01');
+  await seasonEnd.fill('2029-01-31');
+  await add.click();
+  await expect(starts.last()).toHaveValue('2028-02-01');
+  await starts.first().fill('2028-02-03');
+  await ends.first().fill('2028-02-28');
+  await add.click();
+  await expect(starts.last()).toHaveValue('2028-02-29');
+  await ends.last().fill('2028-02-29');
+  await add.click();
+  await expect(starts.last()).toHaveValue('2028-03-01');
+
+  // A missing preceding end must not fall back to the season start and overlap it.
+  await add.click();
+  await expect(starts.last()).toHaveValue('');
+  await remove.last().click();
+  await ends.last().fill('2028-12-31');
+  await add.click();
+  await expect(starts.last()).toHaveValue('2029-01-01');
+
+  await ends.last().fill('2029-01-31');
+  await add.click();
+  await expect(starts.last()).toHaveValue('');
+  await remove.last().click();
+  // The preceding row is the current last row even after deletion.
+  await remove.last().click();
+  await ends.last().fill('2028-03-12');
+  await add.click();
+  await expect(starts.last()).toHaveValue('2028-03-13');
+  await seasonStart.fill('2028-02-02');
+  await ends.first().fill('2028-02-27');
+  await expect(starts.first()).toHaveValue('2028-02-03');
+  await expect(starts.nth(1)).toHaveValue('2028-02-29');
+  await ends.last().fill('2028-01-30');
+  await add.click();
+  await expect(starts.last()).toHaveValue('');
 });

@@ -18,7 +18,7 @@
         .matrix[data-controller="matrix"] a { min-height: 44px; display: inline-flex; align-items: center; }
     }
 </style>
-<div class="bg-white rounded p-4 mb-3">
+<div class="bg-white rounded p-4 mb-3" data-controller="season-phase-defaults">
     <h2 class="h5">{{ $organization->name }}</h2>
     <a href="{{ route('platform.seasons', [$organization->id, 'new']) }}">Create a new season</a>
     <ul class="mt-3">
@@ -38,3 +38,47 @@
     {{ $seasons->links() }}
     <p class="mb-0">Saving changes calendar configuration only. Existing assignment instants and reported hours are preserved.</p>
 </div>
+
+@push('scripts')
+    <script>
+        window.application.register('season-phase-defaults', class extends window.Controller {
+            connect() {
+                this.form = this.element.closest('form');
+                const rows = this.form.querySelector('.matrix tbody');
+                this.observer = new MutationObserver((changes) => {
+                    for (const change of changes) {
+                        for (const row of change.addedNodes) {
+                            if (row instanceof HTMLTableRowElement && !row.classList.contains('add-row')) {
+                                this.defaultStart(row);
+                            }
+                        }
+                    }
+                });
+                this.observer.observe(rows, { childList: true });
+            }
+
+            disconnect() {
+                this.observer.disconnect();
+            }
+
+            defaultStart(row) {
+                const start = row.querySelector('input[name$="[starts_on]"]');
+                if (!start || start.value) return;
+
+                const seasonStart = this.form.elements.namedItem('configuration[starts_on]');
+                const seasonEnd = this.form.elements.namedItem('configuration[ends_on]');
+                const previousEnd = row.previousElementSibling?.querySelector('input[name$="[ends_on]"]');
+                // Date inputs expose UTC calendar days, independent of the browser's time zone or DST.
+                const suggestedDay = previousEnd ? previousEnd.valueAsNumber + 86400000 : seasonStart.valueAsNumber;
+                if (!Number.isFinite(suggestedDay)
+                    || suggestedDay < seasonStart.valueAsNumber
+                    || suggestedDay > seasonEnd.valueAsNumber) return;
+
+                const suggestedDate = new Date(suggestedDay).toISOString().slice(0, 10);
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(suggestedDate)) return;
+                start.value = suggestedDate;
+                start.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    </script>
+@endpush
