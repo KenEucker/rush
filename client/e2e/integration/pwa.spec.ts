@@ -84,6 +84,7 @@ test('Workbox stores app assets only and never substitutes the shell for Server 
   page,
   context,
 }, testInfo) => {
+  test.setTimeout(90_000);
   for (const path of ['/sw.js', '/manifest.json']) {
     const response = await context.request.get(path);
     expect(response.ok()).toBe(true);
@@ -100,7 +101,26 @@ test('Workbox stores app assets only and never substitutes the shell for Server 
       testInfo.project.name === 'mobile' ? 'sam.ranger@example.com' : 'quinn.ranger@example.com',
     );
   await page.getByLabel('Password', { exact: true }).fill('password');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  const signIn = async () => {
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/login' && response.request().method() === 'POST',
+      ),
+      page.getByRole('button', { name: 'Sign in', exact: true }).click(),
+    ]);
+    return response;
+  };
+  let login = await signIn();
+  // The growing suite shares the production IP throttle across its fixture accounts.
+  if (login.status() === 429) {
+    const retryAfter = Number(login.headers()['retry-after']);
+    expect(retryAfter).toBeGreaterThan(0);
+    expect(retryAfter).toBeLessThanOrEqual(60);
+    await new Promise((resolve) => setTimeout(resolve, (retryAfter + 1) * 1000));
+    login = await signIn();
+  }
+  expect(login.status()).toBe(200);
   await expect(page.getByRole('heading', { name: 'Ranger overview' })).toBeVisible();
   const response = await page.goto('/api/v1/session?cache-proof=1');
   expect(response?.fromServiceWorker()).toBe(false);

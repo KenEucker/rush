@@ -291,6 +291,29 @@ human review and merge remain necessary for task and milestone completion.
 
 **Milestone demonstration:** Configure a low-staff phase and a 24/7 phase with distinct models, Ranger availability and preference overrides, and a single Monday Meeting without recurrence.
 
+### RUSH-015 implementation evidence
+
+RUSH-001–014 are merged prerequisites on production, including the recorded
+Milestone 2 production-PWA/official-assignment conflict gate. RUSH-015 implements
+R-01/R-11's season/calendar foundation: scoped Orchid/API season and dated-phase
+creation/editing, explicit zone/week policy, aggregate revision checking, atomic
+phase changes, actor/reason audit and tested overnight/DST allocation. The owner
+approved the date/time policy; employment/meeting/overtime policy stays with
+RUSH-017/037. See [ADR 0015](decisions/0015-season-calendar-policy.md),
+[contract](contracts/seasons.md), and [verification evidence](evidence/RUSH-015/README.md).
+Pest covers invariants, authorization, audit/rollback, calendar edges and
+PostgreSQL concurrent managers; Playwright covers desktop/mobile Orchid forms,
+validation and stale input recovery. Orchid remains online; no Dexie or sync
+schema changes. New phase rows suggest the season start or the day after the
+preceding inclusive phase end, with desktop/mobile regression coverage for
+calendar boundaries and preservation of entered dates. The owner-approved strict
+next-day minimum for season/phase ends is enforced in Orchid and the shared save
+service; Pest covers create/update rejection and Playwright covers picker limits
+and defaults. Initial creation accepts an optional reason with a default audit
+description; edits retain required reasons, covered by API and desktop/mobile
+form tests. Scenarios 1–2 retain their remaining owners, as do all nine
+scenario assignments. Human review, required CI and merge remain necessary.
+
 ## 6. Milestone 4 — Schedule generation (RUSH-022–028)
 
 **Deliverable:** The deterministic planning engine produces inspectable, editable drafts and publishes correctly, including when coverage is incomplete.
@@ -420,7 +443,7 @@ Resolve and document these **before** completing their owner task. They remain o
 
 1. `RUSH-022/024`: precise constraint hierarchy, fairness tradeoffs, rest rules and infeasible cases.
 2. `RUSH-017`: baseline desirability definition and whether it varies by phase, date or weekday.
-3. `RUSH-015/037`: week boundaries, season time zones, overnight allocation, employment/meeting/overtime rules before payroll use.
+3. `RUSH-015/037`: calendar policy resolved with owner approval in [ADR 0015](decisions/0015-season-calendar-policy.md); employment/meeting/overtime rules and mixed-phase hour policies remain RUSH-017/037 decisions before payroll use.
 4. `RUSH-019`: whether a weekly override replaces the entire default preference profile (suggested) or supports partial inheritance.
 5. `RUSH-027`: released team-draft visibility for Rangers.
 6. `RUSH-020`: whether cross-area scheduled shifts count toward percentage event attendance targets.

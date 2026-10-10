@@ -1,5 +1,16 @@
 # Testing RUSH
 
+## Seasons and calendar policy (RUSH-015)
+
+`composer --working-dir=server test -- --filter=Season --compact` covers scoped
+season/phase editing, validation, audit/rollback, stale writes, Orchid access,
+overnight allocation, local week/year edges and DST gaps/folds. PostgreSQL adds
+SeasonConcurrencyTest's simultaneous saves by different managers; SQLite skips
+that case. `npm --prefix client run test:e2e -- seasons.spec.ts` exercises the
+Orchid form on desktop/mobile with real sessions and preserves stale input.
+Its screenshots are written to `docs/evidence/RUSH-015/`. Run against the same
+disposable seeded stack described below; no new dependencies are required.
+
 RUSH-007 implements Technical §13 and cross-cutting regression support for
 R-01–R-38. CI is defined in `.github/workflows/ci.yml`; the fixture and scope are
 documented in [ADR 0007](decisions/0007-ci-and-e2e-foundation.md).

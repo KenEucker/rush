@@ -22,7 +22,7 @@ The application should:
 
 ## 2. Season, phases, shifts, and coverage
 
-**R-01 Season and phases.** Management creates a season containing dated operational phases. Each phase has its own coverage model, staffing requirements, shift definitions, and scheduled-hours policies. Phase configurations can differ.
+**R-01 Season and phases.** Management creates a season containing dated operational phases. Season and phase end dates are inclusive and must be at least the calendar day after their respective start dates (owner-approved October 10, 2026). Each phase has its own coverage model, staffing requirements, shift definitions, and scheduled-hours policies. Phase configurations can differ.
 
 **R-02 Configurable shifts.** Management defines shift start times and durations. The recent norm is three eight-hour shifts daily, but the app must not hardcode that pattern. Schedule generation assigns **whole shifts** by default; management may manually create partial assignments.
 
@@ -145,7 +145,7 @@ These points were **not fully decided** and should be settled during technical d
 
 - Exact ordering and weights among coverage, weekly fairness objectives, rest windows, personal preferences, and event attendance; handling mathematically infeasible combinations.
 - The precise definition of management baseline shift desirability, including whether it can vary by date, day of week, or phase.
-- Week boundaries, time zones, overnight shifts crossing a week, and the applicable overtime/meeting pay rules.
+- Calendar portion resolved in RUSH-015 with owner approval (October 10, 2026): explicit IANA season time zone, configurable week-start weekday at local midnight, and actual elapsed intervals split at local week/phase boundaries. Nonexistent DST wall times are rejected; repeated wall times require an explicit UTC offset. See [ADR 0015](decisions/0015-season-calendar-policy.md). Applicable overtime/meeting pay rules remain unresolved for RUSH-017/037.
 - Whether weekly preference overrides replace the whole profile or can leave individual default fields unchanged (the simpler whole-profile replacement is proposed above).
 - What Rangers can see of a released **team-wide draft** versus only their own draft assignments.
 - How shifts are counted toward special-event percentage staffing when working in a different coverage area.
