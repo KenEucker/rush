@@ -314,6 +314,24 @@ description; edits retain required reasons, covered by API and desktop/mobile
 form tests. Scenarios 1–2 retain their remaining owners, as do all nine
 scenario assignments. Human review, required CI and merge remain necessary.
 
+### RUSH-016 implementation evidence
+
+RUSH-001–015 are merged prerequisites on production, including the Milestone 2
+offline gate. RUSH-016 implements R-02/R-03 configuration: phase-specific local
+shift starts and elapsed durations, UUID areas/groups, dedicated or shared staffing
+counts with mixed-model rejection, scoped Orchid/API administration, revision
+checks and transactional actor/reason audits. Manual assignment intervals can
+retain immutable whole-shift/area context and represent a partial interval.
+See [ADR 0016](decisions/0016-phase-coverage.md),
+[contract](contracts/phase-coverage.md) and [evidence](evidence/RUSH-016/README.md).
+Pest covers validation, authorization, rollback, independent phases, DST,
+partial bounds and PostgreSQL concurrent managers. Playwright covers desktop/mobile
+configuration, reload, model changes, validation and retained stale input.
+Administration stays online; no Client database or sync changes. Scenarios 1–2
+have configuration evidence; generation/gaps/publication and all nine full
+acceptance-scenario owners remain unchanged. Human review, CI and merge remain
+required for task completion.
+
 ## 6. Milestone 4 — Schedule generation (RUSH-022–028)
 
 **Deliverable:** The deterministic planning engine produces inspectable, editable drafts and publishes correctly, including when coverage is incomplete.
