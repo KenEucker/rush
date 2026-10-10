@@ -52,6 +52,19 @@ retaining real cookies. The existing guest PWA test restores both transport and
 the browser connectivity hint before an online reload. Final reruns above pass.
 These are local results, not a claim that GitHub CI has passed.
 
+### CI follow-up: offline error-page teardown
+
+The first GitHub run (38007814584) passed Server, Client and conventions, but
+reported 17/18 E2E tests passed. The desktop cache-isolation trace shows every
+assertion completed, including all nine expected offline navigation failures.
+The final explicit `serverPage.close()` then stalled until the test timeout.
+The test now leaves that fixture-owned Chromium error-page tab to Playwright's
+context teardown, preserving all cache-isolation assertions and the timeout.
+
+`npm --prefix client run test:e2e -- pwa.spec.ts --grep "Workbox stores" --repeat-each=3`
+passed all six desktop/mobile runs against the production stack. Client lint and
+`git diff --check` also passed. No application or Server behavior changed.
+
 ## Screenshots
 
 Synthetic seeded Ranger data only; screenshots captured from the production PWA

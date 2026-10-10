@@ -148,7 +148,8 @@ test('Workbox stores app assets only and never substitutes the shell for Server 
   ]) {
     await expect(serverPage.goto(path, { waitUntil: 'domcontentloaded' })).rejects.toThrow();
   }
-  await serverPage.close();
+  // The fixture owns this tab. Closing a Chromium offline error page directly
+  // can stall; context teardown closes all tabs after collecting diagnostics.
 });
 
 test('a waiting service worker leaves open pages intact and activates after every tab closes', async ({
