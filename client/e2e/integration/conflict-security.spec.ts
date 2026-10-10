@@ -7,7 +7,11 @@ async function signIn(page: Page, email: string) {
   await page.goto('/sign-in');
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Password', { exact: true }).fill('password');
+  const response = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === '/login',
+  );
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  expect((await response).status()).toBe(200);
   await expect(page.getByRole('heading', { name: /overview/ })).toBeVisible();
 }
 async function headers(context: BrowserContext, baseURL: string) {
@@ -68,7 +72,8 @@ test('offline restart reconciles a real Management assignment change without rew
     const identity = (await (await context.request.get('/api/v1/session')).json()) as Identity;
     const member = identity.memberships[0]!;
     const managerPage = await manager.newPage();
-    await signIn(managerPage, 'avery.management@example.com');
+    // Keep this proof independent of auth.spec.ts's per-account login budget.
+    await signIn(managerPage, 'riley.management@example.com');
     const managerHeaders = await headers(manager, baseURL!);
     const id = crypto.randomUUID();
     const url = '/api/v1/organizations/' + member.organization.id + '/official-assignments/' + id;

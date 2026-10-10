@@ -34,6 +34,21 @@ confirmed logout. These were corrected before the passing runs above. The first
 SQLite run passed 83 tests and skipped the two PostgreSQL-only concurrency cases;
 the final PostgreSQL run includes those cases and the added workspace role test.
 
+## CI follow-up
+
+[CI run 38019900316](https://github.com/KenEucker/rush/actions/runs/38019900316)
+passed Server, Client and Git conventions checks but failed one mobile E2E test.
+The authentication suite and conflict proof reused the same Management fixture
+six times within one minute, exceeding the real five-attempt per-account limit.
+The conflict proof now uses the existing Riley Management fixture independently
+of the authentication suite, and its login helper asserts the HTTP status before
+waiting for navigation. Production rate limits remain unchanged.
+
+After the correction, the disposable production stack was rebuilt and seeded:
+`npm --prefix client run test:e2e` **passed all 22 desktop/mobile tests** without
+retries or skips. `npm --prefix client run lint:check` and
+`npm --prefix client run typecheck` **passed**.
+
 ## Acceptance mapping
 
 | Criterion | Evidence |
