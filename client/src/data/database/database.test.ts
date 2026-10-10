@@ -3,7 +3,7 @@ import { Dexie } from 'dexie';
 import { IDBObjectStore } from 'fake-indexeddb';
 import { afterEach, expect, it, vi } from 'vitest';
 import contract from '../../../../docs/contracts/member-profile.example.json';
-import { AccountDatabase, databaseName, schemaV1, schemaV2 } from './database';
+import { AccountDatabase, databaseName, schemaV1, schemaV3 } from './database';
 import { storageError } from './errors';
 import { openAccountStorage, type AccountStorage } from '../repositories/accountStorage';
 
@@ -34,15 +34,15 @@ it('creates the versioned schema with a cold cache and no invented sync checkpoi
   expect(await storage.metadata.get()).toMatchObject({
     ...scope,
     key: 'cache',
-    schemaVersion: 2,
+    schemaVersion: 3,
     lastCachedAt: null,
   });
   expect(await storage.checkpoints.get('profiles')).toBeUndefined();
   const db = new AccountDatabase(scope);
   connections.push(db);
   await db.initialize();
-  expect(db.backendDB().version).toBe(20);
-  expect(db.tables.map((table) => table.name).sort()).toEqual(Object.keys(schemaV2).sort());
+  expect(db.backendDB().version).toBe(30);
+  expect(db.tables.map((table) => table.name).sort()).toEqual(Object.keys(schemaV3).sort());
 });
 
 it('rejects a future schema without erasing commands and checkpoints', async () => {
@@ -61,12 +61,12 @@ it('rejects a future schema without erasing commands and checkpoints', async () 
   // A test-only future version verifies that old Client code fails closed.
   const upgraded = new Dexie(name);
   connections.push(upgraded);
-  upgraded.version(2).stores(schemaV2);
+  upgraded.version(3).stores(schemaV3);
   upgraded
-    .version(3)
+    .version(4)
     .stores({ profiles: 'id, cachedAt' })
     .upgrade(async (tx) => {
-      await tx.table('metadata').update('cache', { schemaVersion: 3 });
+      await tx.table('metadata').update('cache', { schemaVersion: 4 });
     });
   await upgraded.open(); // Closes the old connection through versionchange.
   expect(await upgraded.table('profiles').get(contract.profile.id)).toMatchObject({
@@ -79,7 +79,7 @@ it('rejects a future schema without erasing commands and checkpoints', async () 
     value: intent.localValue,
   });
   expect(await upgraded.table('checkpoints').get('profiles')).toEqual(checkpoint);
-  expect(await upgraded.table('metadata').get('cache')).toEqual({ ...before, schemaVersion: 3 });
+  expect(await upgraded.table('metadata').get('cache')).toEqual({ ...before, schemaVersion: 4 });
   await expect(storage.profiles.list()).rejects.toMatchObject({ code: 'closed' });
   upgraded.close();
   await expect(open()).rejects.toMatchObject({ code: 'schema' });
@@ -92,13 +92,13 @@ it('rolls back a failed migration without erasing previously saved user intent',
   storage.close();
   const failed = new Dexie(name);
   connections.push(failed);
-  failed.version(2).stores(schemaV2);
+  failed.version(3).stores(schemaV3);
   failed
-    .version(3)
+    .version(4)
     .stores({ profiles: 'id, cachedAt' })
     .upgrade(async (tx) => {
       await tx.table('pendingRecords').clear();
-      await tx.table('metadata').update('cache', { schemaVersion: 3 });
+      await tx.table('metadata').update('cache', { schemaVersion: 4 });
       throw new Error('Simulated failed migration');
     });
   await expect(failed.open()).rejects.toThrow('Simulated failed migration');
@@ -106,7 +106,7 @@ it('rolls back a failed migration without erasing previously saved user intent',
   const reopened = await open();
   expect(await reopened.pending.records()).toHaveLength(1);
   expect(await reopened.pending.list()).toHaveLength(1);
-  expect((await reopened.metadata.get())?.schemaVersion).toBe(2);
+  expect((await reopened.metadata.get())?.schemaVersion).toBe(3);
 });
 
 it('reports blocked upgrades instead of waiting indefinitely or deleting the database', async () => {
@@ -189,7 +189,7 @@ it.each([
   expect(storageError(cause, 'write_failed')).toMatchObject({ code, cause });
 });
 
-it('migrates the released v1 database to v2 without losing any existing store', async () => {
+it('migrates the released v1 database to v3 without losing any existing store', async () => {
   const legacy = new Dexie(name);
   connections.push(legacy);
   legacy.version(1).stores(schemaV1);
@@ -225,7 +225,7 @@ it('migrates the released v1 database to v2 without losing any existing store', 
   });
   legacy.close();
   const storage = await open();
-  expect((await storage.metadata.get())?.schemaVersion).toBe(2);
+  expect((await storage.metadata.get())?.schemaVersion).toBe(3);
   expect((await storage.profiles.get(contract.profile.id))?.value).toEqual(contract.profile);
   expect(await storage.pending.list()).toMatchObject([
     { operationId: intent.operationId, attempts: 2, state: 'failed' },
@@ -235,7 +235,7 @@ it('migrates the released v1 database to v2 without losing any existing store', 
   expect(await storage.sync.state()).toMatchObject({ lastSuccessfulSyncAt: null, failures: 0 });
 });
 
-it('rolls back the actual v1 to v2 migration on storage failure and retains old intent', async () => {
+it('rolls back the actual v1 to v3 migration on storage failure and retains old intent', async () => {
   const legacy = new Dexie(name);
   connections.push(legacy);
   legacy.version(1).stores(schemaV1);

@@ -75,7 +75,8 @@ test('production PWA is installable and its shell reopens offline without HTTP c
     uploadThroughput: -1,
   });
   await context.setOffline(false);
-  await reopened.getByRole('button', { name: 'Retry connection' }).click();
+  // Restart online after both the browser hint and actual transport are restored.
+  await reopened.reload();
   await expect(reopened.getByRole('heading', { name: 'Sign in to RUSH' })).toBeVisible();
 });
 

@@ -153,7 +153,7 @@ test('offline hint never claims synchronization and sign-out failure stays actio
   await expect(page.getByRole('alert')).toContainText('Sign-out was not confirmed');
   await expect(page.getByText('Casey Ranger')).toBeVisible();
   await context.setOffline(false);
-  await expect(page.getByRole('status')).toContainText('Sync not yet available');
+  await expect(page.locator('.connection-status')).toContainText('Saved availability synchronizes');
 });
 test('unknown URLs have an accessible recovery path', async ({ page }) => {
   await page.goto('/missing');

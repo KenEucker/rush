@@ -106,6 +106,8 @@ jobs:
       - run: npm --prefix client run lint:check
       - run: npm --prefix client run typecheck
       - run: npm --prefix client run test:unit
+        env:
+          TZ: America/Los_Angeles
       - run: npm --prefix client run build
       - run: npm --prefix client run build:pwa
       - run: npx --prefix client playwright install --with-deps chromium

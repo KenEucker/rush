@@ -1,5 +1,6 @@
 import { Dexie, type DexieOptions, type Table } from 'dexie';
 import { StorageError, storageError } from './errors';
+import type { Unavailability } from '../api/availability';
 import type {
   AccountScope,
   CachedProfile,
@@ -10,7 +11,7 @@ import type {
   SyncState,
 } from './types';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 // Keep released schemas immutable. Add numbered versions and transactional upgrade callbacks.
 export const schemaV1 = {
   profiles: 'id',
@@ -32,10 +33,12 @@ export function databaseName(scope: AccountScope): string {
 }
 
 export const schemaV2 = { ...schemaV1, syncState: 'key' };
+export const schemaV3 = { ...schemaV2, unavailabilities: 'id' };
 
 // Internal to the data layer. Components receive repositories, never Dexie tables.
 export class AccountDatabase extends Dexie {
   profiles!: Table<CachedProfile, string>;
+  unavailabilities!: Table<{ id: string; value: Unavailability; cachedAt: string }, string>;
   pendingCommands!: Table<PendingCommand, string>;
   pendingRecords!: Table<PendingRecord, string>;
   checkpoints!: Table<Checkpoint, string>;
@@ -45,12 +48,20 @@ export class AccountDatabase extends Dexie {
 
   constructor(scope: AccountScope, options?: DexieOptions) {
     super(databaseName(scope), { ...options, autoOpen: false });
-    this.scope = Object.freeze({ ...scope, organizationId: scope.organizationId.toLowerCase() });
+    this.scope = Object.freeze({
+      accountId: scope.accountId,
+      organizationId: scope.organizationId.toLowerCase(),
+    });
     this.version(1).stores(schemaV1);
     this.version(2)
       .stores(schemaV2)
       .upgrade(async (tx) => {
         await tx.table('metadata').update('cache', { schemaVersion: 2 });
+      });
+    this.version(3)
+      .stores(schemaV3)
+      .upgrade(async (tx) => {
+        await tx.table('metadata').update('cache', { schemaVersion: 3 });
       });
     this.on('versionchange', () => {
       // Release upgrades in other tabs; old repositories must not reopen silently.

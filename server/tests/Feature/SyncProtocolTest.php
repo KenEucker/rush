@@ -192,9 +192,12 @@ it('validates bounded pull requests and rolls back projection and sequence on fa
 });
 
 it('reverses and reapplies the migration without altering existing profiles', function () {
+    $availability = require database_path('migrations/2026_10_09_234000_create_unavailability_tables.php');
+    $availability->down();
     $migration = require database_path('migrations/2026_10_09_222450_create_sync_protocol_tables.php');
     $migration->down();
     expect(Schema::hasTable('sync_operations'))->toBeFalse()->and($this->profile->fresh()->revision)->toBe(1);
     $migration->up();
+    $availability->up();
     $this->actingAs($this->actor)->postJson($this->base.'/push', $this->operation)->assertOk();
 });

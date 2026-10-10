@@ -221,6 +221,24 @@ changing any of the nine scenario owners. RUSH-012–014 retain availability,
 account-security, observability and the mandatory conflicting-assignment proof.
 Human review and merge remain required for task completion.
 
+### RUSH-012 implementation evidence
+
+RUSH-001–011 are merged prerequisites on production. RUSH-012 implements the
+foundational R-07 unavailability slice: Ranger range entry/editing, cached reads,
+atomic offline writes, offline restart and centralized reconciliation, with
+Server validation, current ownership, revision checks and audit. Dexie v3
+preserves existing data and adds confirmed availability. A limited offline
+workspace locator does not restore session authorization.
+See [ADR 0012](decisions/0012-availability-proof.md),
+[the contract](contracts/availability.md), and
+[verification evidence](evidence/RUSH-012/README.md).
+Pest covers authorization, intervals, replay, stale writes, audit and rollback;
+Vitest covers persistence, migration and offline account startup; production-PWA
+Playwright covers browser restart, reconnect and a competing availability edit.
+RUSH-013 retains the conflicting official-assignment and expanded account-security
+proof; RUSH-014 retains global observability/recovery; RUSH-018 completes R-07.
+All nine scenario owners remain unchanged. Human review, CI and merge are required.
+
 ## 5. Milestone 3 — Scheduling configuration (RUSH-015–021)
 
 **Deliverable:** Management can configure every season scheduling input, while Rangers maintain default and weekly availability/preferences.

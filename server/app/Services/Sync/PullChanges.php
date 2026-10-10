@@ -5,9 +5,11 @@ namespace App\Services\Sync;
 use App\Enums\OrganizationRole;
 use App\Exceptions\SyncProtocolConflict;
 use App\Http\Resources\MemberProfileResource;
+use App\Http\Resources\UnavailabilityResource;
 use App\Models\MemberProfile;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\Unavailability;
 use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
@@ -46,21 +48,29 @@ class PullChanges
                     'role' => $membership->role->value, 'sequence' => 0]);
                 $stream = (clone $streams)->first();
             }
-            $stored = DB::table('sync_profiles')->where('membership_id', $membership->id)->get()->keyBy('record_id');
+            $availability = Unavailability::query()->where('organization_id', $organization->id)
+                ->where('organization_membership_id', $membership->id)->orderBy('id')->get()
+                ->filter(fn ($record) => Gate::forUser($actor)->allows('view', $record));
+            $visible = [
+                'member_profile' => $profiles->mapWithKeys(fn ($record) => [$record->id => (new MemberProfileResource($record))->resolve()]),
+                'unavailability' => $availability->mapWithKeys(fn ($record) => [$record->id => (new UnavailabilityResource($record))->resolve()]),
+            ];
             $sequence = (int) $stream->sequence;
-            foreach ($profiles as $profile) {
-                $value = (new MemberProfileResource($profile))->resolve();
-                $previous = $stored->pull($profile->id);
-                if ($previous && json_decode($previous->value, true, flags: JSON_THROW_ON_ERROR) === $value) {
-                    continue;
+            foreach (['member_profile' => 'sync_profiles', 'unavailability' => 'sync_unavailabilities'] as $type => $table) {
+                $stored = DB::table($table)->where('membership_id', $membership->id)->get()->keyBy('record_id');
+                foreach ($visible[$type] as $id => $value) {
+                    $previous = $stored->pull($id);
+                    if ($previous && json_decode($previous->value, true, flags: JSON_THROW_ON_ERROR) === $value) {
+                        continue;
+                    }
+                    $json = json_encode($value, JSON_THROW_ON_ERROR);
+                    DB::table($table)->updateOrInsert(['membership_id' => $membership->id, 'record_id' => $id], ['value' => $json]);
+                    DB::table('sync_changes')->insert(['membership_id' => $membership->id, 'sequence' => ++$sequence, 'record_type' => $type, 'record_id' => $id, 'value' => $json]);
                 }
-                $json = json_encode($value, JSON_THROW_ON_ERROR);
-                DB::table('sync_profiles')->updateOrInsert(['membership_id' => $membership->id, 'record_id' => $profile->id], ['value' => $json]);
-                DB::table('sync_changes')->insert(['membership_id' => $membership->id, 'sequence' => ++$sequence, 'record_id' => $profile->id, 'value' => $json]);
-            }
-            foreach ($stored as $removed) {
-                DB::table('sync_profiles')->where('membership_id', $membership->id)->where('record_id', $removed->record_id)->delete();
-                DB::table('sync_changes')->insert(['membership_id' => $membership->id, 'sequence' => ++$sequence, 'record_id' => $removed->record_id, 'value' => null]);
+                foreach ($stored as $removed) {
+                    DB::table($table)->where('membership_id', $membership->id)->where('record_id', $removed->record_id)->delete();
+                    DB::table('sync_changes')->insert(['membership_id' => $membership->id, 'sequence' => ++$sequence, 'record_type' => $type, 'record_id' => $removed->record_id, 'value' => null]);
+                }
             }
             $streams->update(['sequence' => $sequence]);
 
@@ -86,12 +96,12 @@ class PullChanges
                 ->where('sequence', '>', $cursor)->where('sequence', '<=', $upper)
                 ->orderBy('sequence')->limit((int) ($validated['limit'] ?? 100))->get();
             $cursor = $rows->isEmpty() ? $upper : (int) $rows->last()->sequence;
-            $changes = $rows->map(function ($row) use ($profiles) {
+            $changes = $rows->map(function ($row) use ($visible) {
                 // Recheck current visibility even when resuming a historic page.
-                $value = $row->value !== null && $profiles->contains('id', $row->record_id)
+                $value = $row->value !== null && isset($visible[$row->record_type][$row->record_id])
                     ? json_decode($row->value, true, flags: JSON_THROW_ON_ERROR) : null;
 
-                return ['sequence' => (int) $row->sequence, 'record_type' => 'member_profile',
+                return ['sequence' => (int) $row->sequence, 'record_type' => $row->record_type,
                     'record_id' => $row->record_id, 'value' => $value];
             })->all();
 

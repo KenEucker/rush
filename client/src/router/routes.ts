@@ -11,6 +11,11 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Overview', requiresSession: true },
       },
       {
+        path: 'availability',
+        component: () => import('@/pages/AvailabilityPage.vue'),
+        meta: { title: 'Availability', requiresSession: true },
+      },
+      {
         path: 'calendar',
         component: () => import('@/pages/CalendarPage.vue'),
         meta: { title: 'Calendar preview', requiresSession: true },

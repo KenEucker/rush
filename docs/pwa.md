@@ -14,11 +14,15 @@ The same origin must serve the Client, API and administration.
 ## What is available offline now
 
 The app's interface, fonts and connection guidance can open offline after setup.
-Signing in and administration require a connection. This foundation does not yet
-enable offline account access or availability editing; those follow in
-RUSH-012/013. Installing does not mean account data has synchronized.
+Signing in and administration require a connection. After signing in as a Ranger,
+open **Availability** and check the last-sync time. Your cached ranges and saved
+pending changes can then reopen offline, including after closing the browser.
+New ranges and edits remain pending until the Server accepts them on reconnect.
+Installing does not mean account data has synchronized.
 
-If the app cannot check your session, reconnect and choose **Retry connection**.
+The cached workspace does not restore authentication. A known expired session
+requires signing in again; pending work remains in its original account partition.
+If no cached workspace exists, reconnect and choose **Retry connection**.
 If setup fails, reload while connected. Clearing browser/site storage or browser
 eviction removes offline assets, so open online again to prepare the app.
 Do not clear site storage to fix an update: it can also remove pending user work.
