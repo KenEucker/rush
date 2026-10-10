@@ -3,7 +3,13 @@
     <section style="width: 100%; max-width: 420px" aria-labelledby="sign-in-title">
       <p class="text-overline text-primary">Ranger Unified Scheduling &amp; Hours</p>
       <h1 id="sign-in-title" class="text-h4" tabindex="-1">Sign in to RUSH</h1>
-      <p>Use the account provided by your organization.</p>
+      <p>
+        Use the account provided by your organization. Saved work stays with its original account on
+        this device. Sign back in to that account to resume it.
+      </p>
+      <q-banner v-if="session.storageProblem" role="alert" class="bg-orange-1 q-mb-md">{{
+        session.storageProblem
+      }}</q-banner>
       <q-banner v-if="error" role="alert" class="bg-red-1 text-negative q-mb-md">{{
         error
       }}</q-banner>

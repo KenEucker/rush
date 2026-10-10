@@ -108,6 +108,24 @@ function repositories(db: AccountDatabase) {
         ),
     },
     metadata: { get: () => db.read(() => db.metadata.get('cache')) },
+    async clearConfirmed() {
+      await db.write(() =>
+        db.transaction(
+          'rw',
+          db.profiles,
+          db.unavailabilities,
+          db.checkpoints,
+          db.syncState,
+          db.metadata,
+          async () => {
+            await db.profiles.clear();
+            await db.unavailabilities.clear();
+            await db.checkpoints.clear();
+            await db.metadata.update('cache', { lastCachedAt: null });
+          },
+        ),
+      );
+    },
     async clearCache(options: { discardPending?: boolean } = {}) {
       await db.write(() =>
         db.transaction('rw', db.tables, async () => {

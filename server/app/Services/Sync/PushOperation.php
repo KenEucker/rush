@@ -2,6 +2,7 @@
 
 namespace App\Services\Sync;
 
+use App\Enums\OrganizationRole;
 use App\Exceptions\RevisionConflict;
 use App\Exceptions\SyncProtocolConflict;
 use App\Http\Resources\MemberProfileResource;
@@ -20,12 +21,13 @@ use Illuminate\Validation\ValidationException;
 
 class PushOperation
 {
-    public function handle(User $actor, Organization $organization, array $input): array
+    public function handle(User $actor, Organization $organization, array $input, ?string $rangerMembership = null): array
     {
-        return DB::transaction(function () use ($actor, $organization, $input) {
+        return DB::transaction(function () use ($actor, $organization, $input, $rangerMembership) {
             $membership = OrganizationMembership::query()->where('user_id', $actor->id)
                 ->where('organization_id', $organization->id)->lockForUpdate()->first();
             abort_unless($membership?->is_active, 403);
+            abort_if($rangerMembership !== null && ($membership->id !== $rangerMembership || $membership->role !== OrganizationRole::Ranger), 403, 'Your Ranger access changed. Contact Management; saved intent is preserved.');
             $command = Validator::make($input, [
                 'operation_id' => ['required', 'uuid'],
                 'type' => ['required', 'in:member_profile.update,unavailability.save'],

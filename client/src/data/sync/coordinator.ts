@@ -70,6 +70,7 @@ export class SyncCoordinator {
     private readonly storage: AccountStorage,
     private readonly environment: SyncEnvironment = browserSyncEnvironment(),
     private readonly api: SyncTransport = transport,
+    private readonly authorizationFailed?: (error: ApiError) => Promise<void>,
   ) {}
 
   async queueProfileUpdate(id: string, update: UpdateMemberProfile) {
@@ -286,7 +287,12 @@ export class SyncCoordinator {
               message:
                 'Cannot reach the Server. Your changes are saved; synchronization will retry.',
             };
-      if (operationId) await this.storage.sync.mark(operationId, 'failed', problem);
+      if (operationId)
+        await this.storage.sync.mark(
+          operationId,
+          error instanceof ApiError && error.status === 403 ? 'rejected' : 'failed',
+          problem,
+        );
       state = await this.storage.sync.state();
       const failures = state.failures + 1;
       const paused =
@@ -304,6 +310,8 @@ export class SyncCoordinator {
         paused,
         nextAttemptAt: paused ? null : this.environment.now() + Math.ceil(delay),
       });
+      if (error instanceof ApiError && [401, 403, 419].includes(error.status))
+        await this.authorizationFailed?.(error);
     }
   }
 }
