@@ -115,6 +115,23 @@ records remain readable and require correction before the next save.
 
 ## Migration and scope
 
+### Optional reason on initial creation
+
+The owner requested that the first save not require a reason. Orchid marks the
+field optional on the new-season route; SaveSeason accepts omitted/null/blank
+creation reasons and records `Initial season creation.` in the attributed audit.
+Supplied creation reasons are retained. Updates still require a nonblank reason,
+and an existing record cannot be overwritten by claiming a creation revision.
+No migration or sync change is needed.
+
+- `php vendor/bin/pest tests/Feature/SeasonConfigurationTest.php --compact`:
+  **29 passed, 198 assertions**, including optional reasons, audit defaults,
+  supplied reasons, rejected missing edit reasons, replay conflicts and limits.
+- `npx playwright test --config playwright.integration.config.ts seasons.spec.ts --grep "Management configures"`:
+  **2 passed**, desktop/mobile creation without a reason, validation recovery,
+  required reason after creation and stale-edit recovery.
+- Pint, Prettier, focused ESLint and `docker compose build server`: **passed**.
+
 Run the additive season/phase/audit migration before serving the new screen/API.
 No dependencies, existing domain data, Client stores or pending queues change.
 Rollback removes the new tables and their data; back up before rollback after

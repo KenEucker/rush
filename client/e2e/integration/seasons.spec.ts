@@ -54,7 +54,9 @@ test('Management configures seasons and phases with validation and stale-edit re
     await page.getByLabel('Phase starts on', { exact: true }).last().fill(start!);
     await page.getByLabel('Phase ends on', { exact: true }).last().fill(end!);
   }
-  await page.getByLabel('Reason for change', { exact: false }).fill('Configure season calendar');
+  await expect(page.getByLabel('Reason for change', { exact: false })).not.toHaveAttribute(
+    'required',
+  );
   await page.getByRole('button', { name: 'Save season and phases', exact: true }).click();
   await expect(
     page.getByText('Phase dates cannot overlap (end dates are inclusive).').first(),
@@ -66,6 +68,7 @@ test('Management configures seasons and phases with validation and stale-edit re
   await page.getByRole('button', { name: 'Save season and phases', exact: true }).click();
   await expect(page).toHaveURL(/\/seasons\/[0-9a-f-]{36}$/);
   await expect(page.getByText('Season and phases saved.').first()).toBeVisible();
+  await expect(page.getByLabel('Reason for change', { exact: false })).toHaveAttribute('required');
 
   const stale = await context.newPage();
   await stale.goto(page.url());

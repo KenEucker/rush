@@ -55,8 +55,38 @@ it('rejects invalid calendar inputs without partial persistence', function (stri
     ['starts_on', '2026-02-30'], ['ends_on', '2026-01-01'],
     ['phases.0.starts_on', '2026-02-28'], ['phases.1.ends_on', '2026-12-01'],
     ['phases.1.starts_on', '2026-05-31'], ['phases.0.ends_on', '2026-02-28'],
-    ['phases.0.name', ''], ['reason', ''],
+    ['phases.0.name', ''], ['reason', str_repeat('x', 501)], ['reason', ['invalid']],
 ]);
+
+it('allows an optional creation reason while preserving attributed audit history', function (array $reason, string $auditReason) {
+    unset($this->input['reason']);
+    $this->actingAs($this->manager->user)->putJson($this->url, [...$this->input, ...$reason])->assertCreated();
+    $this->assertDatabaseHas('season_changes', [
+        'season_id' => $this->id, 'actor_id' => $this->manager->user_id,
+        'revision' => 1, 'before' => null, 'reason' => $auditReason,
+    ]);
+    $this->putJson($this->url, $this->input)->assertConflict();
+    $this->assertDatabaseCount('season_changes', 1);
+})->with([
+    [[], 'Initial season creation.'],
+    [['reason' => null], 'Initial season creation.'],
+    [['reason' => ''], 'Initial season creation.'],
+    [['reason' => '   '], 'Initial season creation.'],
+    [['reason' => 'Launch the summer program'], 'Launch the summer program'],
+]);
+
+it('still requires a reason for updates without changing data or audit on rejection', function () {
+    unset($this->input['reason']);
+    $this->actingAs($this->manager->user)->putJson($this->url, $this->input)->assertCreated();
+    $update = [...$this->input, 'expected_revision' => 1, 'name' => 'Revised season'];
+    foreach ([[], ['reason' => null], ['reason' => ''], ['reason' => '   ']] as $reason) {
+        $this->putJson($this->url, [...$update, ...$reason])->assertUnprocessable()->assertJsonValidationErrors('reason');
+    }
+    $this->assertDatabaseHas('seasons', ['id' => $this->id, 'revision' => 1, 'name' => $this->input['name']]);
+    $this->assertDatabaseCount('season_changes', 1);
+    $this->putJson($this->url, [...$update, 'reason' => 'Clarify season name'])->assertOk()->assertJsonPath('revision', 2);
+    $this->assertDatabaseHas('season_changes', ['season_id' => $this->id, 'revision' => 2, 'reason' => 'Clarify season name']);
+});
 
 it('allows empty seasons and explicit unconfigured gaps but never silently removes saved phases', function () {
     $this->actingAs($this->manager->user)->putJson($this->url, [...$this->input, 'phases' => []])->assertCreated();

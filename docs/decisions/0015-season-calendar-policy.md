@@ -41,6 +41,10 @@ stricter product rule.
   the expected revision, persist all changes, and append actor/reason/before/after
   audit. The organization lock serializes different managers and new seasons.
   A stale or replayed save returns 409 without further effects.
+- Per the owner's creation-form refinement, a reason is optional for the first
+  save only. Without one, the audit records `Initial season creation.`; supplied
+  reasons are retained. Later saves still require an explicit reason. Actor,
+  revision and snapshot auditing remain mandatory for both paths.
 - Changing dates, time zone or week start creates a new audited configuration
   revision. It does not rewrite existing assignment UTC instants, unavailability,
   activity or hours. Later planning/publication/timesheet tasks must bind their

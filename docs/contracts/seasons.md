@@ -31,7 +31,7 @@ interface Season {
 }
 type SaveSeason = Omit<Season, 'id' | 'organization_id' | 'revision' | 'phases'> & {
   expected_revision: number | null;
-  reason: string;
+  reason?: string | null; // Optional on creation; required and nonblank on update.
   phases: (Omit<Phase, 'id'> & { id?: string | null })[];
 };
 ```
@@ -45,6 +45,12 @@ calendar day). Same-day ends return 422 on `ends_on` or `phases.{index}.ends_on`
 phases must fit within the season without overlap. Names max 120 characters,
 reason max 500, max 100 phases. UUID collisions with another season's phase are
 rejected. Configuration gaps remain explicitly unconfigured.
+
+A creation reason may be omitted, null or blank. The audit then records
+`Initial season creation.` with the actor and initial snapshot. A supplied
+creation reason is retained. Updates still require a nonblank reason; claiming
+`expected_revision: null` for an existing record remains a revision conflict,
+so creation semantics cannot bypass the update requirement.
 
 Errors use the standard API envelope: 401 session, 403 membership/role, 404 scoped
 record missing, 409 `revision_conflict`, 422 field validation, 419 CSRF and 429

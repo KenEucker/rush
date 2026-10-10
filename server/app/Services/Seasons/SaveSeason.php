@@ -40,7 +40,7 @@ class SaveSeason
                 'phases.*.name' => ['required', 'string', 'max:120'],
                 'phases.*.starts_on' => ['required', 'date_format:Y-m-d'],
                 'phases.*.ends_on' => ['required', 'date_format:Y-m-d', 'after:phases.*.starts_on'],
-                'reason' => ['required', 'string', 'max:500'],
+                'reason' => [Rule::requiredIf(($input['expected_revision'] ?? null) !== null), 'nullable', 'string', 'max:500'],
             ], [
                 'ends_on.after' => 'The season end date must be at least the day after its start date.',
                 'phases.*.ends_on.after' => 'The phase end date must be at least the day after its start date.',
@@ -81,7 +81,7 @@ class SaveSeason
             $season->load('phases');
             DB::table('season_changes')->insert([
                 'id' => (string) Str::uuid(), 'season_id' => $season->id, 'actor_id' => $actor->id,
-                'revision' => $season->revision, 'reason' => $values['reason'],
+                'revision' => $season->revision, 'reason' => filled($values['reason'] ?? null) ? $values['reason'] : 'Initial season creation.',
                 'before' => $before === null ? null : json_encode($before, JSON_THROW_ON_ERROR),
                 'after' => json_encode((new SeasonResource($season))->resolve(), JSON_THROW_ON_ERROR),
                 'occurred_at' => now('UTC'),

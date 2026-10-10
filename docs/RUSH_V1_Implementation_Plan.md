@@ -309,7 +309,9 @@ preceding inclusive phase end, with desktop/mobile regression coverage for
 calendar boundaries and preservation of entered dates. The owner-approved strict
 next-day minimum for season/phase ends is enforced in Orchid and the shared save
 service; Pest covers create/update rejection and Playwright covers picker limits
-and defaults. Scenarios 1–2 retain their remaining owners, as do all nine
+and defaults. Initial creation accepts an optional reason with a default audit
+description; edits retain required reasons, covered by API and desktop/mobile
+form tests. Scenarios 1–2 retain their remaining owners, as do all nine
 scenario assignments. Human review, required CI and merge remain necessary.
 
 ## 6. Milestone 4 — Schedule generation (RUSH-022–028)
