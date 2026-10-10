@@ -24,9 +24,8 @@ were rerun with normal process access.
 
 Local Compose startup is blocked by Docker Desktop's inaccessible runtime Unix
 sockets on Windows. The engine failed before any test container started. The
-production-PWA integration suite and PostgreSQL concurrency checks are being
-verified through the repository's clean-checkout CI; results are recorded below
-when available. No acceptance claim is made from a test that has not run.
+production-PWA integration suite and PostgreSQL concurrency checks were verified
+through the repository's clean-checkout CI instead, as recorded below.
 
 The first CI browser run passed 22 existing tests and failed the two new tests at
 the second device login: the PWA/account-security suites and new tests together
@@ -35,6 +34,30 @@ tests now share the less-used Jamie/Robin fixtures (three logins per account),
 assert the login HTTP status explicitly, and wait for worker control before
 offline reload. Application rate limits remain unchanged. The lost-response and
 interrupted-pull steps passed before the login failure.
+
+## Successful CI and screenshots
+
+[CI run 38068394112](https://github.com/KenEucker/rush/actions/runs/38068394112)
+passed all four jobs on implementation/test commit `7ae11da`:
+
+- Git conventions: **passed**.
+- Server: **86 passed, 633 assertions, no skips**, PostgreSQL 17.2;
+  Composer validation, Pint and migration rollback/reapplication passed.
+- Client: **164 unit tests and 12 desktop/mobile shell tests passed**;
+  lint, types, SPA and production PWA/Workbox builds passed.
+- Production Caddy/Laravel/PostgreSQL PWA: **24 desktop/mobile E2E tests passed**,
+  including both corrected independent-device recovery tests. No retries or skips.
+
+Captured and visually inspected from that successful run:
+
+- [Desktop failed sync](desktop-failed.png)
+- [Mobile failed sync](mobile-failed.png)
+- [Desktop two-device conflict](desktop-conflict.png)
+- [Mobile two-device conflict](mobile-conflict.png)
+
+Screenshots contain seeded fixture data only. Browser traces, session cookies and
+temporary databases are not committed. The final evidence-only commit changes no
+application or test behavior; the implementation is verified by the run above.
 
 ## Acceptance mapping
 
