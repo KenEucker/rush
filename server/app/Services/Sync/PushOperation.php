@@ -5,10 +5,13 @@ namespace App\Services\Sync;
 use App\Exceptions\RevisionConflict;
 use App\Exceptions\SyncProtocolConflict;
 use App\Http\Resources\MemberProfileResource;
+use App\Http\Resources\UnavailabilityResource;
 use App\Models\MemberProfile;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\Unavailability;
 use App\Models\User;
+use App\Services\Availability\SaveUnavailability;
 use App\Services\Identity\UpdateMemberProfile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -25,19 +28,30 @@ class PushOperation
             abort_unless($membership?->is_active, 403);
             $command = Validator::make($input, [
                 'operation_id' => ['required', 'uuid'],
-                'type' => ['required', 'in:member_profile.update'],
+                'type' => ['required', 'in:member_profile.update,unavailability.save'],
                 'record_id' => ['required', 'uuid'],
-                'expected_revision' => ['required', 'integer', 'min:1', 'max:2147483646'],
-                'payload' => ['required', 'array:display_name,phone'],
+                'expected_revision' => ($input['type'] ?? null) === 'unavailability.save' ? ['present', 'nullable', 'integer', 'min:1', 'max:2147483646'] : ['required', 'integer', 'min:1', 'max:2147483646'],
+                'payload' => ['required', ($input['type'] ?? null) === 'unavailability.save' ? 'array:membership_id,starts_at,ends_at' : 'array:display_name,phone'],
             ])->validate();
             $command['operation_id'] = strtolower($command['operation_id']);
             $command['record_id'] = strtolower($command['record_id']);
-            $command['expected_revision'] = (int) $command['expected_revision'];
+            $command['expected_revision'] = $command['expected_revision'] === null ? null : (int) $command['expected_revision'];
             ksort($command['payload']);
             ksort($command);
-            $profile = MemberProfile::query()->where('organization_id', $organization->id)
-                ->findOrFail($command['record_id']);
-            Gate::forUser($actor)->authorize('update', $profile);
+            $availability = $command['type'] === 'unavailability.save';
+            if ($availability) {
+                Gate::forUser($actor)->authorize('create', [Unavailability::class, $membership]);
+                abort_unless(($command['payload']['membership_id'] ?? null) === $membership->id, 403);
+                $existing = Unavailability::query()->find($command['record_id']);
+                if ($existing) {
+                    Gate::forUser($actor)->authorize('update', $existing);
+                    abort_unless($existing->organization_id === $organization->id, 403);
+                }
+            } else {
+                $profile = MemberProfile::query()->where('organization_id', $organization->id)
+                    ->findOrFail($command['record_id']);
+                Gate::forUser($actor)->authorize('update', $profile);
+            }
             $fingerprint = hash('sha256', json_encode($command, JSON_THROW_ON_ERROR));
             $previous = DB::table('sync_operations')->where('membership_id', $membership->id)
                 ->where('operation_id', $command['operation_id'])->first();
@@ -54,11 +68,17 @@ class PushOperation
                 return $result;
             }
             try {
-                $updated = app(UpdateMemberProfile::class)->handle($actor, $profile, [
-                    ...$command['payload'], 'expected_revision' => $command['expected_revision'],
-                ]);
-                $result = ['operation_id' => $command['operation_id'], 'status' => 'accepted',
-                    'profile' => (new MemberProfileResource($updated))->resolve()];
+                if ($availability) {
+                    $updated = app(SaveUnavailability::class)->handle($actor, $membership, $command['record_id'], $command['expected_revision'], $command['payload']);
+                    $result = ['operation_id' => $command['operation_id'], 'status' => 'accepted',
+                        'unavailability' => (new UnavailabilityResource($updated))->resolve()];
+                } else {
+                    $updated = app(UpdateMemberProfile::class)->handle($actor, $profile, [
+                        ...$command['payload'], 'expected_revision' => $command['expected_revision'],
+                    ]);
+                    $result = ['operation_id' => $command['operation_id'], 'status' => 'accepted',
+                        'profile' => (new MemberProfileResource($updated))->resolve()];
+                }
             } catch (RevisionConflict $exception) {
                 $result = ['operation_id' => $command['operation_id'], 'status' => 'conflict',
                     'error' => ['code' => 'revision_conflict', 'message' => $exception->getMessage(), 'errors' => (object) []]];

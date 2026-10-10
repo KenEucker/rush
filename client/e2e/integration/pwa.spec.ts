@@ -75,7 +75,8 @@ test('production PWA is installable and its shell reopens offline without HTTP c
     uploadThroughput: -1,
   });
   await context.setOffline(false);
-  await reopened.getByRole('button', { name: 'Retry connection' }).click();
+  // Restart online after both the browser hint and actual transport are restored.
+  await reopened.reload();
   await expect(reopened.getByRole('heading', { name: 'Sign in to RUSH' })).toBeVisible();
 });
 
@@ -147,7 +148,8 @@ test('Workbox stores app assets only and never substitutes the shell for Server 
   ]) {
     await expect(serverPage.goto(path, { waitUntil: 'domcontentloaded' })).rejects.toThrow();
   }
-  await serverPage.close();
+  // The fixture owns this tab. Closing a Chromium offline error page directly
+  // can stall; context teardown closes all tabs after collecting diagnostics.
 });
 
 test('a waiting service worker leaves open pages intact and activates after every tab closes', async ({

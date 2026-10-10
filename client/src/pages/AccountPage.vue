@@ -30,6 +30,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ApiError } from '../data/api/session';
+import { PendingWorkError } from '../data/repositories/accountStorage';
 import { useSessionStore } from '../stores/session';
 
 const session = useSessionStore();
@@ -44,9 +45,11 @@ async function signOut() {
     await router.replace('/sign-in');
   } catch (cause) {
     error.value =
-      cause instanceof ApiError
-        ? cause.message
-        : 'Sign-out was not confirmed. Reconnect and try again.';
+      cause instanceof PendingWorkError
+        ? 'You have saved changes waiting for the Server. Synchronize or resolve them before signing out.'
+        : cause instanceof ApiError
+          ? cause.message
+          : 'Sign-out was not confirmed. Reconnect and try again.';
   } finally {
     signingOut.value = false;
   }

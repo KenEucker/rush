@@ -27,6 +27,7 @@ export interface PendingCommand {
   createdAt: string;
   state: PendingState;
   attempts: number;
+  acceptedRevision?: number;
   problem: { code: string; message: string } | null;
 }
 

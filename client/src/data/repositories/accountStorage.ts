@@ -22,6 +22,9 @@ function repositories(db: AccountDatabase) {
   return {
     scope: db.scope,
     sync: syncRepository(db),
+    availability: {
+      list: () => db.read(() => db.unavailabilities.toArray()),
+    },
     profiles: {
       get: (id: string) => db.read(() => db.profiles.get(id)),
       list: () => db.read(() => db.profiles.toArray()),
@@ -115,6 +118,7 @@ function repositories(db: AccountDatabase) {
             throw new PendingWorkError();
           }
           await db.profiles.clear();
+          await db.unavailabilities.clear();
           await db.pendingCommands.clear();
           await db.pendingRecords.clear();
           await db.checkpoints.clear();

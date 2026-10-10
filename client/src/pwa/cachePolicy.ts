@@ -2,7 +2,7 @@
 // join this allowlist; Server routes can never receive cached index.html.
 export const shellNavigationAllowlist = [
   /^\/(?:\?.*)?$/,
-  /^\/(?:sign-in|calendar|account)\/?(?:\?.*)?$/,
+  /^\/(?:sign-in|calendar|account|availability)\/?(?:\?.*)?$/,
 ];
 export const serverNavigationDenylist = [
   /^\/(?:api|admin|sanctum|login|logout|csrf-cookie|up|vendor|build|storage|index\.php)(?:[^a-z]|$)/i,

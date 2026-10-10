@@ -51,6 +51,10 @@ test('coordinator preserves offline intent through reload, serializes tabs, and 
   const id = membership.profile!.id;
   const url = '/api/v1/organizations/' + scope.organizationId + '/profiles/' + id;
   const initial = (await (await context.request.get(url)).json()) as MemberProfile;
+  // Keep this infrastructure harness separate from the session-owned coordinator
+  // now exercised by availability.spec.ts. This public page retains the real
+  // cookie session but does not start the application's authenticated workspace.
+  await page.goto('/sign-in');
   async function attach(target: Page) {
     await target.addScriptTag({ content: harness });
     await target.evaluate((scope) => window.RushSyncHarness.open(scope), scope);
@@ -76,7 +80,7 @@ test('coordinator preserves offline intent through reload, serializes tabs, and 
     (await page.evaluate(() => window.RushSyncHarness.snapshot())).pending[0]?.operationId,
   ).toBe(operation.operation_id);
   const other = await context.newPage();
-  await other.goto('/');
+  await other.goto('/sign-in');
   await attach(other);
   let pushes = 0;
   context.on('request', (request) => {

@@ -79,8 +79,8 @@
           {{ online ? 'Network available' : 'Offline' }} ·
           {{
             online
-              ? 'Sync not yet available'
-              : 'Reconnect to access your account and administration.'
+              ? 'Saved availability synchronizes with the Server.'
+              : 'Cached availability is available; changes wait for Server acceptance.'
           }}
         </div>
         <PwaHelp v-if="isPwa" />
@@ -124,17 +124,22 @@ const loading = ref(false);
 const error = ref('');
 let request = 0;
 const showNavigation = computed(
-  () => !!session.identity && !loading.value && !error.value && route.meta.requiresSession,
+  () =>
+    (!!session.identity || !!session.workspace) &&
+    !loading.value &&
+    !error.value &&
+    route.meta.requiresSession,
 );
 const navigation = [
   { to: '/', label: 'Overview', icon: 'home' },
   { to: '/calendar', label: 'Calendar preview', icon: 'calendar_month' },
+  { to: '/availability', label: 'Availability', icon: 'event_busy' },
   { to: '/account', label: 'Your account', icon: 'person' },
 ];
 const upcomingTools = computed(() =>
   session.isManagement
     ? ['Planning', 'Schedule changes', 'Timesheet review', 'Reports']
-    : ['Availability', 'Shift activity', 'Timesheets', 'Notifications'],
+    : ['Shift activity', 'Timesheets', 'Notifications'],
 );
 
 function closeMobileNavigation() {
@@ -148,13 +153,17 @@ function focusContent() {
 async function loadSession() {
   const currentRequest = ++request;
   error.value = '';
-  loading.value = !!route.meta.requiresSession;
+  loading.value = !!route.meta.requiresSession && !session.workspace;
   document.title = (typeof route.meta.title === 'string' ? route.meta.title : 'RUSH') + ' · RUSH';
   if (route.meta.requiresSession) {
     try {
       await session.refresh();
       if (currentRequest !== request) return;
-      if (!session.identity) {
+      if (!session.identity && !(session.workspace && route.path === '/availability')) {
+        if (session.workspace) {
+          await router.replace('/availability');
+          return;
+        }
         await router.replace('/sign-in');
         return;
       }
@@ -181,4 +190,7 @@ watch(
   },
   { immediate: true },
 );
+watch(online, (connected) => {
+  if (connected && route.meta.requiresSession) void loadSession();
+});
 </script>

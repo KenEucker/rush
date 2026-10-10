@@ -7,6 +7,8 @@ import { StorageError } from '../database/errors';
 import type { AccountStorage } from '../repositories/accountStorage';
 import { SYNC_STREAM } from '../repositories/syncRepository';
 import { pendingOperation, stageProfileUpdate } from './protocol';
+import { stageAvailability } from './protocol';
+import type { AvailabilityInput } from '../api/availability';
 
 export interface SyncEnvironment {
   online(): boolean;
@@ -74,6 +76,13 @@ export class SyncCoordinator {
     if (this.stopped) throw new Error('Reopen this account before saving changes.');
     const operation = await stageProfileUpdate(this.storage, id, update);
     // Local success means both durable inserts committed, never Server acceptance.
+    if (this.started) this.wake();
+    return operation;
+  }
+
+  async queueAvailability(input: AvailabilityInput, id?: string, revision: number | null = null) {
+    if (this.stopped) throw new Error('Reopen this account before saving changes.');
+    const operation = await stageAvailability(this.storage, input, id, revision);
     if (this.started) this.wake();
     return operation;
   }
