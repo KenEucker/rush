@@ -6,13 +6,25 @@ test('Management configures seasons and phases with validation and stale-edit re
   page,
   context,
 }) => {
+  test.setTimeout(90_000);
   await context.request.get('/sanctum/csrf-cookie');
   const cookie = (await context.cookies()).find((item) => item.name === 'XSRF-TOKEN');
   expect(cookie).toBeDefined();
-  const login = await context.request.post('/login', {
-    headers: { Accept: 'application/json', 'X-XSRF-TOKEN': decodeURIComponent(cookie!.value) },
-    data: { email: 'riley.management@example.com', password: 'password' },
-  });
+  const signIn = () =>
+    context.request.post('/login', {
+      headers: { Accept: 'application/json', 'X-XSRF-TOKEN': decodeURIComponent(cookie!.value) },
+      data: { email: 'riley.management@example.com', password: 'password' },
+    });
+  let login = await signIn();
+  // All integration tests share the real 30/minute IP limiter. Respect its
+  // cooldown during fixture login; never disable or raise application limits.
+  if (login.status() === 429) {
+    const retryAfter = Number(login.headers()['retry-after']);
+    expect(retryAfter).toBeGreaterThan(0);
+    expect(retryAfter).toBeLessThanOrEqual(60);
+    await new Promise((resolve) => setTimeout(resolve, (retryAfter + 1) * 1000));
+    login = await signIn();
+  }
   expect(login.status()).toBe(200);
   const identity = (await (await context.request.get('/api/v1/session')).json()) as SessionIdentity;
   const organization = identity.memberships[0]!.organization.id;

@@ -34,6 +34,13 @@ Orchid's explicit aria-label attributes), mobile table overflow (phase rows now
 stack), and a test race caused by observing a different season's revision in
 the list (now waits for the edited form's actual revision).
 
+The first production CI run (38070115309) passed PostgreSQL **113 tests / 776
+assertions**, all Client checks, and **23 E2E tests**. The new mobile season login
+then reached the existing shared 30/minute IP login limit, also affecting the
+two following tests. The season test's fixture login now honors a bounded Server
+Retry-After cooldown once; production rate limits and test retry counts remain
+unchanged. The same desktop season workflow passed against PostgreSQL/Caddy.
+
 ## Screenshots
 
 Captured from the successful desktop/mobile workflow using seeded fixture accounts
