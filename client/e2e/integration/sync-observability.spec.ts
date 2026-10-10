@@ -61,9 +61,11 @@ test('global recovery survives lost receipts and interrupted pulls, then resolve
     const row = () => page.locator(`[data-record-id="${recordId}"]`);
     await expect(status).toContainText('Synchronization failed');
     await expect(row()).toContainText('Sync failed — saved for retry');
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({
       path: resolve(evidence, info.project.name + '-failed.png'),
       fullPage: true,
+      animations: 'disabled',
     });
     await info.attach('failed-sync', {
       path: resolve(evidence, info.project.name + '-failed.png'),
@@ -124,9 +126,11 @@ test('global recovery survives lost receipts and interrupted pulls, then resolve
     await expect(status).toContainText('1 rejected or conflicting change(s)');
     await status.getByRole('button', { name: 'Sync now' }).click();
     await expect(row()).toContainText('Conflict — needs attention');
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({
       path: resolve(evidence, info.project.name + '-conflict.png'),
       fullPage: true,
+      animations: 'disabled',
     });
     await info.attach('device-conflict', {
       path: resolve(evidence, info.project.name + '-conflict.png'),
