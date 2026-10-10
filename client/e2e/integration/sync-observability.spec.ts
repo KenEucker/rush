@@ -6,7 +6,9 @@ async function signIn(page: Page, email: string) {
   await page.goto('/sign-in');
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Password', { exact: true }).fill('password');
+  const response = page.waitForResponse((value) => new URL(value.url()).pathname === '/login');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  expect((await response).status()).toBe(200);
   await expect(page.getByRole('heading', { name: 'Ranger overview' })).toBeVisible();
   await page.goto('/availability');
   await expect(page.getByTestId('sync-status')).toContainText('Synced with Server');
@@ -25,7 +27,7 @@ test('global recovery survives lost receipts and interrupted pulls, then resolve
   const first = await browser.newContext(options);
   const second = await browser.newContext(options);
   const email =
-    info.project.name === 'mobile' ? 'sam.ranger@example.com' : 'quinn.ranger@example.com';
+    info.project.name === 'mobile' ? 'robin.ranger@example.com' : 'jamie.ranger@example.com';
   const evidence = resolve('../docs/evidence/RUSH-014');
   await mkdir(evidence, { recursive: true });
   try {
@@ -101,6 +103,7 @@ test('global recovery survives lost receipts and interrupted pulls, then resolve
     await signIn(other, email);
     const remoteRow = other.locator(`[data-record-id="${recordId}"]`);
     await expect(remoteRow).toContainText('5:00 PM');
+    await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
     await first.setOffline(true);
     await row().getByRole('button', { name: 'Edit time range' }).click();
     await page.getByLabel('End time', { exact: true }).fill('06:00 PM');

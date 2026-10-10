@@ -28,6 +28,14 @@ production-PWA integration suite and PostgreSQL concurrency checks are being
 verified through the repository's clean-checkout CI; results are recorded below
 when available. No acceptance claim is made from a test that has not run.
 
+The first CI browser run passed 22 existing tests and failed the two new tests at
+the second device login: the PWA/account-security suites and new tests together
+used six logins per fixture account within the real five-attempt limit. The new
+tests now share the less-used Jamie/Robin fixtures (three logins per account),
+assert the login HTTP status explicitly, and wait for worker control before
+offline reload. Application rate limits remain unchanged. The lost-response and
+interrupted-pull steps passed before the login failure.
+
 ## Acceptance mapping
 
 | Criterion | Evidence |
