@@ -2,16 +2,13 @@ import { mkdtemp, rm, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test, expect, chromium, type Page, type BrowserContext } from '@playwright/test';
+import { submitLogin } from '../fixtures/login';
 
 async function signIn(page: Page, email: string) {
   await page.goto('/sign-in');
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Password', { exact: true }).fill('password');
-  const response = page.waitForResponse(
-    (response) => new URL(response.url()).pathname === '/login',
-  );
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  expect((await response).status()).toBe(200);
+  expect((await submitLogin(page)).status()).toBe(200);
   await expect(page.getByRole('heading', { name: /overview/ })).toBeVisible();
 }
 async function headers(context: BrowserContext, baseURL: string) {

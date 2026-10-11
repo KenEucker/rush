@@ -1,6 +1,7 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import type { SessionIdentity } from '../../src/data/api/session';
 import { parseOperation, parsePullPage, parseResult } from '../../src/data/sync/protocol';
+import { submitLogin } from '../fixtures/login';
 
 function rangerAccount() {
   // Separate fixture accounts keep the real per-account login limiter enabled.
@@ -14,7 +15,7 @@ async function signIn(page: Page, email: string) {
   await page.goto('/sign-in');
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Password', { exact: true }).fill('password');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  expect((await submitLogin(page)).status()).toBe(200);
   await expect(page.getByRole('heading', { name: /^(Ranger|Management) overview$/ })).toBeVisible();
 }
 
@@ -60,11 +61,7 @@ test('guests cannot read private data and credentials require a real CSRF token'
   expect(missingCsrf.status()).toBe(419);
   await page.getByLabel('Email', { exact: true }).fill(rangerEmail);
   await page.getByLabel('Password', { exact: true }).fill('incorrect-password');
-  const rejectedLogin = page.waitForResponse(
-    (response) => new URL(response.url()).pathname === '/login',
-  );
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  expect((await rejectedLogin).status()).toBe(422);
+  expect((await submitLogin(page)).status()).toBe(422);
   await expect(page.getByRole('alert')).toContainText('Check your details and try again.');
   expect(
     (

@@ -2,6 +2,7 @@ import { mkdtemp, rm, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test, expect, chromium, type BrowserContext, type Page } from '@playwright/test';
+import { submitLogin } from '../fixtures/login';
 
 async function fillRange(page: Page, end = '07:00 AM') {
   await page.getByLabel('Start date', { exact: true }).fill('2026-11-03');
@@ -44,7 +45,7 @@ test('Ranger unavailability survives an offline browser restart and reconciles w
           : 'jamie.ranger@example.com',
       );
     await page.getByLabel('Password', { exact: true }).fill('password');
-    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    expect((await submitLogin(page)).status()).toBe(200);
     await expect(page.getByRole('heading', { name: 'Ranger overview' })).toBeVisible();
     await page.goto('/availability');
     await expect(page.getByRole('heading', { name: 'Your unavailability' })).toBeVisible();

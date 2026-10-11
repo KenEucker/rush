@@ -14,6 +14,7 @@ class OfficialAssignmentController extends Controller
         $record = $service->handle($request->user(), $organization, $assignment, $request->all());
 
         return response()->json(['id' => $record->id, 'revision' => $record->revision,
+            'shift_context' => $record->shift_context,
             'membership_id' => $record->organization_membership_id,
             'starts_at' => $record->starts_at->utc()->format('Y-m-d\TH:i:s\Z'),
             'ends_at' => $record->ends_at->utc()->format('Y-m-d\TH:i:s\Z')]);

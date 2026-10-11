@@ -9,10 +9,10 @@ class OfficialAssignment extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['id', 'organization_id', 'organization_membership_id', 'starts_at', 'ends_at', 'revision'];
+    protected $fillable = ['id', 'organization_id', 'organization_membership_id', 'starts_at', 'ends_at', 'revision', 'shift_context'];
 
     protected function casts(): array
     {
-        return ['starts_at' => 'immutable_datetime', 'ends_at' => 'immutable_datetime', 'revision' => 'integer'];
+        return ['starts_at' => 'immutable_datetime', 'ends_at' => 'immutable_datetime', 'revision' => 'integer', 'shift_context' => 'array'];
     }
 }

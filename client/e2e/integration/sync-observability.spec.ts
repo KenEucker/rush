@@ -1,14 +1,13 @@
 import { test, expect, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { submitLogin } from '../fixtures/login';
 
 async function signIn(page: Page, email: string) {
   await page.goto('/sign-in');
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Password', { exact: true }).fill('password');
-  const response = page.waitForResponse((value) => new URL(value.url()).pathname === '/login');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  expect((await response).status()).toBe(200);
+  expect((await submitLogin(page)).status()).toBe(200);
   await expect(page.getByRole('heading', { name: 'Ranger overview' })).toBeVisible();
   await page.goto('/availability');
   await expect(page.getByTestId('sync-status')).toContainText('Synced with Server');
@@ -33,7 +32,6 @@ test('global recovery survives lost receipts and interrupted pulls, then resolve
   try {
     const page = await first.newPage();
     await signIn(page, email);
-    const lastSuccessful = await page.getByText('Last sync:', { exact: false }).textContent();
     let loseResponse = true;
     let committed = false;
     const ids: string[] = [];
@@ -61,6 +59,10 @@ test('global recovery survives lost receipts and interrupted pulls, then resolve
     const row = () => page.locator(`[data-record-id="${recordId}"]`);
     await expect(status).toContainText('Synchronization failed');
     await expect(row()).toContainText('Sync failed — saved for retry');
+    // Navigation/startup pulls may finish after sign-in. The failed push proves
+    // the single coordinator flight has reached our fault, after those pulls.
+    // Compare the following interrupted pull against this settled baseline.
+    const lastSuccessful = await page.getByText('Last sync:', { exact: false }).textContent();
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({
       path: resolve(evidence, info.project.name + '-failed.png'),

@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test, expect, chromium, type Page, type BrowserContext } from '@playwright/test';
+import { submitLogin } from '../fixtures/login';
 
 async function ready(page: Page) {
   await page.evaluate(() => navigator.serviceWorker.ready);
@@ -101,26 +102,7 @@ test('Workbox stores app assets only and never substitutes the shell for Server 
       testInfo.project.name === 'mobile' ? 'sam.ranger@example.com' : 'quinn.ranger@example.com',
     );
   await page.getByLabel('Password', { exact: true }).fill('password');
-  const signIn = async () => {
-    const [response] = await Promise.all([
-      page.waitForResponse(
-        (response) =>
-          new URL(response.url()).pathname === '/login' && response.request().method() === 'POST',
-      ),
-      page.getByRole('button', { name: 'Sign in', exact: true }).click(),
-    ]);
-    return response;
-  };
-  let login = await signIn();
-  // The growing suite shares the production IP throttle across its fixture accounts.
-  if (login.status() === 429) {
-    const retryAfter = Number(login.headers()['retry-after']);
-    expect(retryAfter).toBeGreaterThan(0);
-    expect(retryAfter).toBeLessThanOrEqual(60);
-    await new Promise((resolve) => setTimeout(resolve, (retryAfter + 1) * 1000));
-    login = await signIn();
-  }
-  expect(login.status()).toBe(200);
+  expect((await submitLogin(page)).status()).toBe(200);
   await expect(page.getByRole('heading', { name: 'Ranger overview' })).toBeVisible();
   const response = await page.goto('/api/v1/session?cache-proof=1');
   expect(response?.fromServiceWorker()).toBe(false);

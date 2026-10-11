@@ -30,6 +30,11 @@
                     through {{ \Carbon\CarbonImmutable::parse($item->ends_on, 'UTC')->format('D, M j, Y') }}
                     · {{ $item->timezone }} · {{ $item->phases->count() }} phases · Revision {{ $item->revision }}
                 </div>
+                <ul>
+                    @foreach($item->phases as $phase)
+                        <li><a href="{{ route('platform.phase-coverage', [$organization->id, $phase->id]) }}">Configure shifts and coverage — {{ $phase->name }}</a></li>
+                    @endforeach
+                </ul>
             </li>
         @empty
             <li>No seasons configured yet.</li>
