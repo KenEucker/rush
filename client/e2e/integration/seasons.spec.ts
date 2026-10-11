@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import type { SessionIdentity } from '../../src/data/api/session';
+import { withLoginCooldown } from '../fixtures/login';
 
 test.use({ timezoneId: 'America/Los_Angeles' });
 
@@ -14,16 +15,7 @@ test.beforeEach(async ({ context }) => {
       headers: { Accept: 'application/json', 'X-XSRF-TOKEN': decodeURIComponent(cookie!.value) },
       data: { email: 'riley.management@example.com', password: 'password' },
     });
-  let login = await signIn();
-  // All integration tests share the real 30/minute IP limiter. Respect its
-  // cooldown during fixture login; never disable or raise application limits.
-  if (login.status() === 429) {
-    const retryAfter = Number(login.headers()['retry-after']);
-    expect(retryAfter).toBeGreaterThan(0);
-    expect(retryAfter).toBeLessThanOrEqual(60);
-    await new Promise((resolve) => setTimeout(resolve, (retryAfter + 1) * 1000));
-    login = await signIn();
-  }
+  const login = await withLoginCooldown(signIn);
   expect(login.status()).toBe(200);
 });
 

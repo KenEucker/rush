@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import type { SessionIdentity } from '../../src/data/api/session';
 import type { MemberProfile } from '../../src/data/api/profiles';
 import type * as Harness from '../fixtures/sync-harness';
+import { submitLogin } from '../fixtures/login';
 
 declare global {
   interface Window {
@@ -43,7 +44,7 @@ test('coordinator preserves offline intent through reload, serializes tabs, and 
   await page.goto('/sign-in');
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Password', { exact: true }).fill('password');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  expect((await submitLogin(page)).status()).toBe(200);
   await expect(page.getByRole('heading', { name: 'Ranger overview' })).toBeVisible();
   const session = (await (await context.request.get('/api/v1/session')).json()) as SessionIdentity;
   const membership = session.memberships[0]!;

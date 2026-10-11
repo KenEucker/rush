@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import type { SessionIdentity } from '../../src/data/api/session';
+import { withLoginCooldown } from '../fixtures/login';
 
 test('Management configures dedicated and shared phase coverage with validation and stale recovery', async ({
   page,
@@ -16,14 +17,7 @@ test('Management configures dedicated and shared phase coverage with validation 
       headers,
       data: { email: 'riley.management@example.com', password: 'password' },
     });
-  let login = await signIn();
-  if (login.status() === 429) {
-    const retry = Number(login.headers()['retry-after']);
-    expect(retry).toBeGreaterThan(0);
-    expect(retry).toBeLessThanOrEqual(60);
-    await new Promise((resolve) => setTimeout(resolve, (retry + 1) * 1000));
-    login = await signIn();
-  }
+  const login = await withLoginCooldown(signIn);
   expect(login.status()).toBe(200);
   headers['X-XSRF-TOKEN'] = decodeURIComponent(
     (await context.cookies()).find((cookie) => cookie.name === 'XSRF-TOKEN')!.value,

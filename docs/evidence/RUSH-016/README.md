@@ -78,3 +78,33 @@ representation through the existing Management API. No employment/fairness
 policy, gap calculation, publication or payroll behavior is added.
 
 Required CI, human review and merge remain completion gates.
+
+## CI regression follow-up
+
+CI run `38076038969` passed Server, Client and conventions but failed two of 32
+E2E cases. The mobile conflict proof received HTTP 429 during fixture sign-in.
+The desktop observability proof captured Last sync before a later successful
+startup/navigation pull; its trace shows successful pulls at 18:35:42.820Z and
+18:35:43.166Z before the first injected push failure. The test incorrectly
+compared the subsequent failed pull to the earlier timestamp.
+
+All integration fixture logins now share a single bounded Retry-After handler.
+It retries once only for HTTP 429, validates the 1–60 second cooldown, extends
+the test budget only by that wait, and refills the password cleared by the real
+sign-in form. Other responses still reach the original assertions. Production
+limits, application code and Playwright test retry counts are unchanged. A
+deterministic browser case injects 429 followed by 422 to verify waiting,
+password restoration, bounded timeout allowance and retained rejection behavior.
+
+The observability proof captures its comparison timestamp after the injected
+lost-receipt failure is visible. The single coordinator has then completed any
+earlier successful pulls; the assertion still requires that the subsequent
+interrupted pull leave Last sync unchanged.
+
+Verification for this follow-up: clean seeded production-stack `npm run test:e2e`
+**34 passed** (desktop/mobile, including the two original failures and two
+cooldown regressions); Client `npm run lint:check` and `npm run typecheck`
+**passed**; `npm run conventions:test` **8 passed**. The earlier full local
+attempt reused records from focused tests and hit the availability fixture's
+last-row assumption; the clean fixture rerun above passed without changing
+that workflow. GitHub CI must rerun for the updated commit.
