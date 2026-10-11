@@ -24,5 +24,6 @@
     <p>{{ \Carbon\CarbonImmutable::parse($phase->starts_on, 'UTC')->format('D, M j, Y') }}
         through {{ \Carbon\CarbonImmutable::parse($phase->ends_on, 'UTC')->format('D, M j, Y') }} · {{ $season->timezone }}</p>
     <a href="{{ route('platform.seasons', [$organization->id, $season->id]) }}">Back to season and phases</a>
+    · <a href="{{ route('platform.phase-policies', [$organization->id, $phase->id]) }}">Configure scheduling policies</a>
     <p class="mt-3 mb-0">Changes configure future planning inputs. Existing assignment times and their saved area context stay intact. Partial assignments are recorded separately from whole shift definitions.</p>
 </div>

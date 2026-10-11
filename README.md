@@ -114,6 +114,61 @@ npm run client:build
 npm run client:build:pwa
 ```
 
+### Artisan helpers
+
+From the repository root, `npm run artisan -- <command> [options]` runs any
+Server Artisan command with the Server's environment, on Windows or Unix.
+For example, `npm run artisan -- make:migration add_example` or
+`npm run artisan -- list`.
+
+Common aliases are available in the root `package.json`:
+
+| Purpose | npm scripts |
+| --- | --- |
+| Database | `server:migrate`, `server:migrate:status`, `server:migrate:rollback`, `server:migrate:fresh`, `server:seed` |
+| Clear caches | `server:cache:clear`, `server:config:clear`, `server:route:clear`, `server:view:clear`, `server:optimize:clear` |
+| Build caches | `server:optimize`, `server:config:cache`, `server:route:cache`, `server:view:cache` |
+| Setup | `server:key:generate`, `server:storage:link` |
+| Queues | `server:queue:work`, `server:queue:restart`, `server:queue:failed`, `server:queue:retry` |
+| Scheduler | `server:schedule:list`, `server:schedule:run`, `server:schedule:work` |
+| Operations | `server:route:list`, `server:up`, `server:down` |
+
+Pass extra arguments after `--`, such as `npm run server:migrate -- --pretend`
+or `npm run server:queue:retry -- <job-id>`. These run locally, using `server/.env`.
+
+Every Artisan helper also has a `docker:` counterpart that executes in the
+running Compose `server` service, using its container environment:
+
+```sh
+npm run docker:artisan -- list
+npm run docker:server:migrate -- --pretend
+npm run docker:server:migrate -- --force
+npm run docker:server:optimize:clear
+npm run docker:server:queue:restart
+```
+
+Docker Artisan helpers run as `www-data` so generated cache files remain writable
+by PHP-FPM, and disable TTY allocation for terminal/CI compatibility. For an
+interactive shell use `npm run docker:shell`; for interactive Artisan commands
+use `npm run docker:exec -- --user www-data server php artisan tinker`.
+`npm run docker:exec -- <service> <command>` also reaches other services.
+`docker:up`, `docker:down`, `docker:ps`, and `docker:logs` manage or inspect the
+stack; for example `npm run docker:logs -- --tail 100 server`.
+
+Compose uses this repository's default stack unless you select another with
+`COMPOSE_FILE` and `COMPOSE_PROJECT_NAME`. For explicit Compose flags use
+`npm run docker:compose -- -p <project> -f <file> exec -T server php artisan <command>`.
+Start the intended stack first (`npm run docker:up -- --build`). These scripts do
+not silently start containers or change the host environment. The production
+container receives `APP_KEY` from the root environment: use
+`npm run docker:server:key:generate -- --show` to generate a value, store it in
+the deployment's root `.env`, and recreate the Server container to apply it.
+
+No alias adds `--force`. `migrate:fresh` drops all tables, rollback removes the
+last migration batch, and key generation changes encryption keys: use those
+deliberately against the intended environment. `server:optimize:clear` includes
+the application cache; the individual clear commands are available when needed.
+
 The [testing guide](docs/testing.md) covers clean-checkout dependencies, disposable
 PostgreSQL and full-stack Playwright runs, CI reports, and commit/PR validation.
 CI checks PRs targeting `production` and `main`; human review is required to merge.
