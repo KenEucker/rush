@@ -70,3 +70,24 @@ Full scenario completion remains with the original nine scenario owners. These
 are planning inputs, not a generation engine, warning dashboard, employment-rule
 certification or payroll implementation. Human review, required CI and merge
 remain necessary before the task meets the project's definition of done.
+
+## Docker helper follow-up
+
+At the owner's request, all 27 Artisan helpers now have `docker:` equivalents
+that execute in the running Compose Server as `www-data`, without requiring a
+TTY. Generic Compose, exec, interactive shell, logs, status, up and down scripts
+are also available. README documents argument forwarding, alternate Compose
+file/project selection and container APP_KEY setup.
+
+Verified against the disposable `rush-017` stack with
+`COMPOSE_FILE=docker/compose.ci.yaml` and `COMPOSE_PROJECT_NAME=rush-017`:
+
+- All **27 Docker Artisan commands** executed with `--help`: **passed**.
+- `npm run docker:server:migrate -- --force`: **passed**, all 16 migrations.
+- `npm run docker:server:migrate:status`: **passed**, all migrations reported ran.
+- `npm run docker:server:optimize:clear`: **passed**, including database cache.
+- `npm run docker:exec -- -T --user www-data server id`: **passed**, UID 82.
+- `npm run docker:ps` and `npm run docker:logs -- --tail 1 server`: **passed**.
+
+Only package scripts and documentation changed; application test results above
+remain applicable. No default deployment was modified during these checks.

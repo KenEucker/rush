@@ -134,8 +134,36 @@ Common aliases are available in the root `package.json`:
 | Operations | `server:route:list`, `server:up`, `server:down` |
 
 Pass extra arguments after `--`, such as `npm run server:migrate -- --pretend`
-or `npm run server:queue:retry -- <job-id>`. These run locally, using `server/.env`;
-container deployments should use `docker compose exec server php artisan ...`.
+or `npm run server:queue:retry -- <job-id>`. These run locally, using `server/.env`.
+
+Every Artisan helper also has a `docker:` counterpart that executes in the
+running Compose `server` service, using its container environment:
+
+```sh
+npm run docker:artisan -- list
+npm run docker:server:migrate -- --pretend
+npm run docker:server:migrate -- --force
+npm run docker:server:optimize:clear
+npm run docker:server:queue:restart
+```
+
+Docker Artisan helpers run as `www-data` so generated cache files remain writable
+by PHP-FPM, and disable TTY allocation for terminal/CI compatibility. For an
+interactive shell use `npm run docker:shell`; for interactive Artisan commands
+use `npm run docker:exec -- --user www-data server php artisan tinker`.
+`npm run docker:exec -- <service> <command>` also reaches other services.
+`docker:up`, `docker:down`, `docker:ps`, and `docker:logs` manage or inspect the
+stack; for example `npm run docker:logs -- --tail 100 server`.
+
+Compose uses this repository's default stack unless you select another with
+`COMPOSE_FILE` and `COMPOSE_PROJECT_NAME`. For explicit Compose flags use
+`npm run docker:compose -- -p <project> -f <file> exec -T server php artisan <command>`.
+Start the intended stack first (`npm run docker:up -- --build`). These scripts do
+not silently start containers or change the host environment. The production
+container receives `APP_KEY` from the root environment: use
+`npm run docker:server:key:generate -- --show` to generate a value, store it in
+the deployment's root `.env`, and recreate the Server container to apply it.
+
 No alias adds `--force`. `migrate:fresh` drops all tables, rollback removes the
 last migration batch, and key generation changes encryption keys: use those
 deliberately against the intended environment. `server:optimize:clear` includes
