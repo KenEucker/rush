@@ -3,12 +3,15 @@
 use App\Http\Controllers\MemberProfileController;
 use App\Http\Controllers\OfficialAssignmentController;
 use App\Http\Controllers\PhaseCoverageController;
+use App\Http\Controllers\PhaseSchedulingPolicyController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SyncController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/organizations/{organization}/phases/{phase}/policies', [PhaseSchedulingPolicyController::class, 'show']);
+    Route::put('/organizations/{organization}/phases/{phase}/policies', [PhaseSchedulingPolicyController::class, 'save'])->middleware('throttle:120,1');
     Route::get('/organizations/{organization}/phases/{phase}/coverage', [PhaseCoverageController::class, 'show']);
     Route::put('/organizations/{organization}/phases/{phase}/coverage', [PhaseCoverageController::class, 'save'])->middleware('throttle:120,1');
     Route::get('/organizations/{organization}/seasons', [SeasonController::class, 'index']);

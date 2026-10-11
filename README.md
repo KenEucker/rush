@@ -114,6 +114,33 @@ npm run client:build
 npm run client:build:pwa
 ```
 
+### Artisan helpers
+
+From the repository root, `npm run artisan -- <command> [options]` runs any
+Server Artisan command with the Server's environment, on Windows or Unix.
+For example, `npm run artisan -- make:migration add_example` or
+`npm run artisan -- list`.
+
+Common aliases are available in the root `package.json`:
+
+| Purpose | npm scripts |
+| --- | --- |
+| Database | `server:migrate`, `server:migrate:status`, `server:migrate:rollback`, `server:migrate:fresh`, `server:seed` |
+| Clear caches | `server:cache:clear`, `server:config:clear`, `server:route:clear`, `server:view:clear`, `server:optimize:clear` |
+| Build caches | `server:optimize`, `server:config:cache`, `server:route:cache`, `server:view:cache` |
+| Setup | `server:key:generate`, `server:storage:link` |
+| Queues | `server:queue:work`, `server:queue:restart`, `server:queue:failed`, `server:queue:retry` |
+| Scheduler | `server:schedule:list`, `server:schedule:run`, `server:schedule:work` |
+| Operations | `server:route:list`, `server:up`, `server:down` |
+
+Pass extra arguments after `--`, such as `npm run server:migrate -- --pretend`
+or `npm run server:queue:retry -- <job-id>`. These run locally, using `server/.env`;
+container deployments should use `docker compose exec server php artisan ...`.
+No alias adds `--force`. `migrate:fresh` drops all tables, rollback removes the
+last migration batch, and key generation changes encryption keys: use those
+deliberately against the intended environment. `server:optimize:clear` includes
+the application cache; the individual clear commands are available when needed.
+
 The [testing guide](docs/testing.md) covers clean-checkout dependencies, disposable
 PostgreSQL and full-stack Playwright runs, CI reports, and commit/PR validation.
 CI checks PRs targeting `production` and `main`; human review is required to merge.

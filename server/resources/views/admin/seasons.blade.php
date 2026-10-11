@@ -33,6 +33,7 @@
                 <ul>
                     @foreach($item->phases as $phase)
                         <li><a href="{{ route('platform.phase-coverage', [$organization->id, $phase->id]) }}">Configure shifts and coverage — {{ $phase->name }}</a></li>
+                        <li><a href="{{ route('platform.phase-policies', [$organization->id, $phase->id]) }}">Configure scheduling policies — {{ $phase->name }}</a></li>
                     @endforeach
                 </ul>
             </li>

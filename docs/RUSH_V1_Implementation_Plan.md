@@ -332,6 +332,26 @@ have configuration evidence; generation/gaps/publication and all nine full
 acceptance-scenario owners remain unchanged. Human review, CI and merge remain
 required for task completion.
 
+### RUSH-017 implementation evidence
+
+RUSH-001–016 are merged prerequisites on production, including the Milestone 2
+offline gate. RUSH-017 implements R-09/R-11/R-29 configuration: explicit phase
+weekly targets, planned caps and separate planned/actual warning thresholds,
+and Management shift baselines with weekday/date overrides. The owner approved
+the classification scope and configuration-only hour-policy boundary. See
+[ADR 0017](decisions/0017-scheduling-policies.md),
+[contract](contracts/phase-scheduling-policies.md), and
+[evidence](evidence/RUSH-017/README.md).
+Shared Orchid/API services enforce permissions, revisions and atomic audits.
+Pest tests precedence, validation, phase isolation, stale configuration,
+rollback and PostgreSQL concurrent managers; Playwright covers desktop/mobile
+save/reload, validation and stale input preservation. Administration stays online,
+with no Dexie/sync changes. Root npm scripts provide generic Artisan access and
+common migration/cache/operations aliases. Employment validation and mixed-phase
+calculations remain explicit RUSH-022/037 dependencies. RUSH-037/041 retain
+worked-hour warnings; all nine full acceptance scenario owners remain unchanged.
+Human review, required CI and merge remain necessary for task completion.
+
 ## 6. Milestone 4 — Schedule generation (RUSH-022–028)
 
 **Deliverable:** The deterministic planning engine produces inspectable, editable drafts and publishes correctly, including when coverage is incomplete.
@@ -460,8 +480,8 @@ The following is the authoritative task assignment index. Several requirements s
 Resolve and document these **before** completing their owner task. They remain open in Requirements §11:
 
 1. `RUSH-022/024`: precise constraint hierarchy, fairness tradeoffs, rest rules and infeasible cases.
-2. `RUSH-017`: baseline desirability definition and whether it varies by phase, date or weekday.
-3. `RUSH-015/037`: calendar policy resolved with owner approval in [ADR 0015](decisions/0015-season-calendar-policy.md); employment/meeting/overtime rules and mixed-phase hour policies remain RUSH-017/037 decisions before payroll use.
+2. `RUSH-017`: resolved with owner approval in [ADR 0017](decisions/0017-scheduling-policies.md): phase-specific shift baseline with weekday and date overrides; local start date selects date → weekday → baseline. Personal positive preferences remain separate.
+3. `RUSH-015/037`: calendar policy resolved with owner approval in [ADR 0015](decisions/0015-season-calendar-policy.md). RUSH-017 stores configurable hour inputs without legal defaults. Mixed-phase weekly aggregation must be resolved before RUSH-022/037 calculations, and employment/meeting/overtime rules validated before payroll use, per ADR 0017.
 4. `RUSH-019`: whether a weekly override replaces the entire default preference profile (suggested) or supports partial inheritance.
 5. `RUSH-027`: released team-draft visibility for Rangers.
 6. `RUSH-020`: whether cross-area scheduled shifts count toward percentage event attendance targets.
