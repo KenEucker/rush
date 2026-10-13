@@ -42,6 +42,15 @@
           <q-item-section>
             <q-item-label>{{ formatInterval(entry.starts_at, entry.ends_at) }}</q-item-label>
             <q-item-label class="q-mt-sm">{{ labels[entry.state] ?? entry.state }}</q-item-label>
+            <q-item-label class="q-mt-sm" data-testid="acknowledgment">
+              {{
+                entry.state !== 'synced'
+                  ? 'This saved change has not been acknowledged by Management.'
+                  : entry.acknowledged_at
+                    ? 'Management acknowledged this revision as seen. The schedule is not necessarily repaired.'
+                    : 'Awaiting Management acknowledgment.'
+              }}
+            </q-item-label>
             <q-banner
               v-if="entry.assignment_conflicts?.length"
               class="bg-orange-1 q-mt-sm"
@@ -57,6 +66,19 @@
               <div v-for="assignment in entry.assignment_conflicts" :key="assignment.id">
                 {{ formatInterval(assignment.starts_at, assignment.ends_at) }} · Assignment revision
                 {{ assignment.revision }}
+                <p v-if="assignment.affected_coverage">
+                  Affected coverage gap needs review ·
+                  {{
+                    assignment.affected_coverage.target_name ?? 'Coverage target not yet configured'
+                  }}
+                  ·
+                  {{
+                    formatInterval(
+                      assignment.affected_coverage.starts_at,
+                      assignment.affected_coverage.ends_at,
+                    )
+                  }}. No replacement or Management coverage is confirmed.
+                </p>
               </div>
             </q-banner>
             <q-item-label v-if="entry.message" caption>{{ entry.message }}</q-item-label>

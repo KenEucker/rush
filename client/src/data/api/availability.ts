@@ -5,6 +5,7 @@ export interface AssignmentConflict {
   revision: number;
   starts_at: string;
   ends_at: string;
+  affected_coverage?: { starts_at: string; ends_at: string; target_name: string | null };
 }
 export interface Unavailability {
   id: string;
@@ -14,6 +15,7 @@ export interface Unavailability {
   ends_at: string;
   revision: number;
   assignment_conflicts?: AssignmentConflict[];
+  acknowledged_at?: string | null;
 }
 export interface AvailabilityInput {
   membership_id: string;
@@ -66,6 +68,12 @@ export function parseUnavailability(
   }
   const conflicts = value.assignment_conflicts;
   if (
+    value.acknowledged_at !== undefined &&
+    value.acknowledged_at !== null &&
+    !validInstant(value.acknowledged_at)
+  )
+    throw new ApiError(200, 'Invalid acknowledgment data.', 'invalid_response');
+  if (
     conflicts !== undefined &&
     (!Array.isArray(conflicts) ||
       conflicts.some(
@@ -77,20 +85,41 @@ export function parseUnavailability(
           item.revision < 1 ||
           !validInstant(item.starts_at) ||
           !validInstant(item.ends_at) ||
-          item.ends_at <= item.starts_at,
+          item.ends_at <= item.starts_at ||
+          (item.affected_coverage !== undefined &&
+            (!item.affected_coverage ||
+              !validInstant(item.affected_coverage.starts_at) ||
+              !validInstant(item.affected_coverage.ends_at) ||
+              item.affected_coverage.ends_at <= item.affected_coverage.starts_at ||
+              item.affected_coverage.starts_at < item.starts_at ||
+              item.affected_coverage.ends_at > item.ends_at ||
+              (item.affected_coverage.target_name !== null &&
+                typeof item.affected_coverage.target_name !== 'string'))),
       ))
   )
     throw new ApiError(200, 'Invalid assignment conflict data.', 'invalid_response');
   return {
+    ...(value.acknowledged_at === undefined ? {} : { acknowledged_at: value.acknowledged_at }),
     ...(conflicts === undefined
       ? {}
       : {
-          assignment_conflicts: conflicts.map(({ id, revision, starts_at, ends_at }) => ({
-            id,
-            revision,
-            starts_at,
-            ends_at,
-          })),
+          assignment_conflicts: conflicts.map(
+            ({ id, revision, starts_at, ends_at, affected_coverage }) => ({
+              id,
+              revision,
+              starts_at,
+              ends_at,
+              ...(affected_coverage === undefined
+                ? {}
+                : {
+                    affected_coverage: {
+                      starts_at: affected_coverage.starts_at,
+                      ends_at: affected_coverage.ends_at,
+                      target_name: affected_coverage.target_name,
+                    },
+                  }),
+            }),
+          ),
         }),
     id,
     organization_id: organizationId,

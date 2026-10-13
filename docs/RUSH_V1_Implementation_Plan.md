@@ -352,6 +352,25 @@ calculations remain explicit RUSH-022/037 dependencies. RUSH-037/041 retain
 worked-hour warnings; all nine full acceptance scenario owners remain unchanged.
 Human review, required CI and merge remain necessary for task completion.
 
+### RUSH-018 implementation evidence
+
+RUSH-001–017 are merged prerequisites on production, including the Milestone 2
+offline conflict gate. RUSH-018 completes R-07/R-08's unavailability workflow:
+Ranger online/offline range creation/editing; audited Management on-behalf saves;
+durable per-revision notices and acknowledgments; affected assignment/coverage
+warnings that remain after acknowledgment. Shared services enforce organization,
+active roles, immutable ownership, expected revisions and transactional audits.
+See [ADR 0018](decisions/0018-unavailability-workflow.md),
+[contract](contracts/availability.md) and [evidence](evidence/RUSH-018/README.md).
+Pest covers permissions, validation, audit rollback, stale writes, duplicate
+acknowledgment and PostgreSQL concurrency. Vitest verifies durable projections;
+production-PWA Playwright covers desktop/mobile offline reload, acknowledgment,
+Management creation/editing and preserved conflicting Ranger intent. Existing
+Dexie stores/queue remain authoritative for Client persistence. RUSH-025/040
+retain aggregate/historical gap accounting; RUSH-034 retains the consolidated
+notification center. Scenario 4 gains partial evidence; its full journey and all
+nine scenario owners remain unchanged. Human review, CI and merge remain required.
+
 ## 6. Milestone 4 — Schedule generation (RUSH-022–028)
 
 **Deliverable:** The deterministic planning engine produces inspectable, editable drafts and publishes correctly, including when coverage is incomplete.

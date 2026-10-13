@@ -18,7 +18,9 @@ class ManagementAccess
         // Enable new routes only with their own domain policies in the owning task.
         $seasonRoute = $request->routeIs('platform.seasons', 'platform.phase-coverage', 'platform.phase-policies') &&
             ($request->isMethod('GET') || ($request->isMethod('POST') && $request->route('method') === 'save'));
-        abort_unless($seasonRoute || ($request->isMethod('GET') && $request->routeIs('platform.index', 'platform.main')), 404);
+        $availabilityRoute = $request->routeIs('platform.unavailability') &&
+            ($request->isMethod('GET') || ($request->isMethod('POST') && in_array($request->route('method'), ['save', 'acknowledge'], true)));
+        abort_unless($seasonRoute || $availabilityRoute || ($request->isMethod('GET') && $request->routeIs('platform.index', 'platform.main')), 404);
 
         return $next($request);
     }
