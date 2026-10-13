@@ -200,7 +200,7 @@ it('migrates a released v2 partition without losing pending data or checkpoint',
   expect(await storage.pending.records()).toMatchObject([{ value: { note: 'Keep' } }]);
   expect((await storage.checkpoints.get('profiles'))?.token).toBe('old-checkpoint');
   expect(await storage.availability.list()).toEqual([]);
-  expect((await storage.metadata.get())?.schemaVersion).toBe(3);
+  expect((await storage.metadata.get())?.schemaVersion).toBe(4);
 });
 
 it('retains field-level rejection explanations and refuses malformed assignment conflict data', async () => {

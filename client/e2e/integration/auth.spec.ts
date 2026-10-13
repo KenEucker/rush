@@ -211,7 +211,11 @@ test('Management opens Orchid on the same origin and profile reads/writes enforc
     });
     expect(pulled.status()).toBe(200);
     const syncPage = parsePullPage(await pulled.json(), membership.organization.id);
-    expect(syncPage.changes.map((change) => change.record_id)).toEqual([membership.profile!.id]);
+    expect(
+      syncPage.changes
+        .filter((change) => change.record_type === 'member_profile')
+        .map((change) => change.record_id),
+    ).toEqual([membership.profile!.id]);
     const next = await rangerContext.request.post(`${syncUrl}/pull`, {
       headers: await csrfHeaders(rangerContext),
       data: { checkpoint: syncPage.checkpoint },

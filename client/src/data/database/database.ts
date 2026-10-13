@@ -1,3 +1,4 @@
+import type { PreferenceProfile, PreferenceCatalog } from '../api/preferences';
 import { Dexie, type DexieOptions, type Table } from 'dexie';
 import { StorageError, storageError } from './errors';
 import type { Unavailability } from '../api/availability';
@@ -11,7 +12,7 @@ import type {
   SyncState,
 } from './types';
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 // Keep released schemas immutable. Add numbered versions and transactional upgrade callbacks.
 export const schemaV1 = {
   profiles: 'id',
@@ -35,8 +36,12 @@ export function databaseName(scope: AccountScope): string {
 export const schemaV2 = { ...schemaV1, syncState: 'key' };
 export const schemaV3 = { ...schemaV2, unavailabilities: 'id' };
 
+export const schemaV4 = { ...schemaV3, preferences: 'id', preferenceCatalogs: 'id' };
+
 // Internal to the data layer. Components receive repositories, never Dexie tables.
 export class AccountDatabase extends Dexie {
+  preferences!: Table<{ id: string; value: PreferenceProfile; cachedAt: string }, string>;
+  preferenceCatalogs!: Table<{ id: string; value: PreferenceCatalog; cachedAt: string }, string>;
   profiles!: Table<CachedProfile, string>;
   unavailabilities!: Table<{ id: string; value: Unavailability; cachedAt: string }, string>;
   pendingCommands!: Table<PendingCommand, string>;
@@ -62,6 +67,11 @@ export class AccountDatabase extends Dexie {
       .stores(schemaV3)
       .upgrade(async (tx) => {
         await tx.table('metadata').update('cache', { schemaVersion: 3 });
+      });
+    this.version(4)
+      .stores(schemaV4)
+      .upgrade(async (tx) => {
+        await tx.table('metadata').update('cache', { schemaVersion: 4 });
       });
     this.on('versionchange', () => {
       // Release upgrades in other tabs; old repositories must not reopen silently.

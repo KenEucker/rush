@@ -40,11 +40,20 @@
       @click="retry"
     />
     <q-btn
-      v-if="counts.pending || counts.assignments"
+      v-if="
+        snapshot?.commands.some((c) => c.recordType !== 'preference_profile') || counts.assignments
+      "
       flat
       color="primary"
       label="Review saved changes"
       to="/availability"
+    />
+    <q-btn
+      v-if="snapshot?.commands.some((c) => c.recordType === 'preference_profile')"
+      flat
+      color="primary"
+      label="Review saved preferences"
+      to="/preferences"
     />
     <q-btn
       v-if="snapshot?.state.paused || session.offlineAccess"

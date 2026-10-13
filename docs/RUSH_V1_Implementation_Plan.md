@@ -285,7 +285,7 @@ human review and merge remain necessary for task and milestone completion.
 | **RUSH-016** Shifts, areas and phase coverage | Configurable shift starts/durations, coverage areas, dedicated *or* shared model per phase, staffing counts and partial manual assignment representation; prohibit mixing models. | R-02, R-03 |
 | **RUSH-017** Scheduling policies | Phase-specific hour targets/planned caps/overtime warnings and shift desirability baseline; document exact classification scope and labor-policy validation dependencies. | R-09, R-11, R-29 |
 | **RUSH-018** Complete unavailability workflow | Extend proof slice: create/edit time spans online/offline; Management edits on behalf with audit; notices and acknowledgments, affected-assignment/gap flags; acknowledge does not repair schedule. | R-07, R-08 |
-| **RUSH-019** Ranger preference profiles | Default profile, full-week overrides, preferred shifts, weekly desired hours, consecutive/separated days-off preference; return to default next week; editable offline. Resolve override semantics. | R-09, R-10 |
+| **RUSH-019** Ranger preference profiles | Default profile, week-scoped field overrides with unspecified fields inherited from the current default (owner-approved ADR 0019), preferred shifts, weekly desired hours, consecutive/separated days-off preference; return to default next week; editable offline. | R-09, R-10 |
 | **RUSH-020** One-off events and paid attendance | Dated, nonrecurring events, paid attendance assignments, number/percentage targets, choice whether scheduled shifts count, independent coverage/event evaluation. Resolve event-counting rule. | R-06 |
 | **RUSH-021** Configuration UI and tests | End-to-end phase/coverage/availability/preferences/event configuration with management and Ranger interfaces, permissions, validation, and sync tests. | R-01–R-11 |
 
@@ -370,6 +370,25 @@ Dexie stores/queue remain authoritative for Client persistence. RUSH-025/040
 retain aggregate/historical gap accounting; RUSH-034 retains the consolidated
 notification center. Scenario 4 gains partial evidence; its full journey and all
 nine scenario owners remain unchanged. Human review, CI and merge remain required.
+
+### RUSH-019 implementation evidence
+
+RUSH-001–018 are merged prerequisites on production, including the Milestone 2
+offline conflict gate. RUSH-019 implements R-09/R-10 preference profiles with the
+owner-approved field inheritance decision. Shared Server services/policies enforce
+own-Ranger access, scope uniqueness, validation, revisions and transactional audits.
+Dexie v4 extends the existing queue/pull stream with preferences and a minimal
+season/shift catalog. The mobile Quasar form supports offline edits, effective
+weekly preview, pending states and explicit conflict review/resubmission.
+See [ADR 0019](decisions/0019-ranger-preference-profiles.md),
+[contract](contracts/preferences.md), and [verification](evidence/RUSH-019/README.md).
+Pest covers inheritance, DST/week/year boundaries, validation, privacy, idempotency,
+rollback and PostgreSQL competing creation; Vitest covers migration, atomic writes,
+interrupted acceptance, conflict retention and protocol validation. Production-PWA
+Playwright covers desktop/mobile offline reload, next-week defaults and two-session
+conflict recovery. RUSH-022/027 retain draft input snapshots, lifecycle edit guards
+and staleness; RUSH-024 retains fairness weights. All nine full acceptance-scenario
+owners remain unchanged. Human review, required CI and merge remain necessary.
 
 ## 6. Milestone 4 — Schedule generation (RUSH-022–028)
 
@@ -501,7 +520,7 @@ Resolve and document these **before** completing their owner task. They remain o
 1. `RUSH-022/024`: precise constraint hierarchy, fairness tradeoffs, rest rules and infeasible cases.
 2. `RUSH-017`: resolved with owner approval in [ADR 0017](decisions/0017-scheduling-policies.md): phase-specific shift baseline with weekday and date overrides; local start date selects date → weekday → baseline. Personal positive preferences remain separate.
 3. `RUSH-015/037`: calendar policy resolved with owner approval in [ADR 0015](decisions/0015-season-calendar-policy.md). RUSH-017 stores configurable hour inputs without legal defaults. Mixed-phase weekly aggregation must be resolved before RUSH-022/037 calculations, and employment/meeting/overtime rules validated before payroll use, per ADR 0017.
-4. `RUSH-019`: whether a weekly override replaces the entire default preference profile (suggested) or supports partial inheritance.
+4. `RUSH-019`: resolved with owner approval in [ADR 0019](decisions/0019-ranger-preference-profiles.md): weekly profiles inherit unspecified fields dynamically from the default; explicit neutral values override it.
 5. `RUSH-027`: released team-draft visibility for Rangers.
 6. `RUSH-020`: whether cross-area scheduled shifts count toward percentage event attendance targets.
 7. `RUSH-036`: exact Finished convenience window; it may never gate later accurate hours reporting.

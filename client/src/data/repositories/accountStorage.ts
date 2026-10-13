@@ -22,6 +22,23 @@ function repositories(db: AccountDatabase) {
   return {
     scope: db.scope,
     sync: syncRepository(db),
+    preferences: {
+      snapshot: () =>
+        db.read(() =>
+          db.transaction(
+            'r',
+            [db.preferences, db.preferenceCatalogs, db.pendingCommands, db.pendingRecords],
+            async () => ({
+              profiles: await db.preferences.toArray(),
+              configs: await db.preferenceCatalogs.toArray(),
+              commands: await db.pendingCommands.toArray(),
+              local: await db.pendingRecords.toArray(),
+            }),
+          ),
+        ),
+      list: () => db.read(() => db.preferences.toArray()),
+      catalogs: () => db.read(() => db.preferenceCatalogs.toArray()),
+    },
     availability: {
       list: () => db.read(() => db.unavailabilities.toArray()),
     },
@@ -57,6 +74,7 @@ function repositories(db: AccountDatabase) {
         expectedRevision: number | null;
         command: JsonObject;
         localValue: JsonObject | null;
+        replacesOperationId?: string;
       }) {
         if (
           !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -89,6 +107,20 @@ function repositories(db: AccountDatabase) {
         };
         await db.write(() =>
           db.transaction('rw', db.pendingCommands, db.pendingRecords, async () => {
+            if (input.replacesOperationId) {
+              const previous = await db.pendingCommands.get(input.replacesOperationId);
+              if (
+                !previous ||
+                previous.recordType !== input.recordType ||
+                !['rejected', 'conflict'].includes(previous.state)
+              ) {
+                throw new Error(
+                  'This saved change has changed. Review it again before resubmitting.',
+                );
+              }
+              await db.pendingCommands.delete(previous.operationId);
+              await db.pendingRecords.delete(previous.operationId);
+            }
             await db.pendingCommands.add(command);
             await db.pendingRecords.add(record);
           }),
@@ -112,14 +144,20 @@ function repositories(db: AccountDatabase) {
       await db.write(() =>
         db.transaction(
           'rw',
-          db.profiles,
-          db.unavailabilities,
-          db.checkpoints,
-          db.syncState,
-          db.metadata,
+          [
+            db.profiles,
+            db.unavailabilities,
+            db.preferences,
+            db.preferenceCatalogs,
+            db.checkpoints,
+            db.syncState,
+            db.metadata,
+          ],
           async () => {
             await db.profiles.clear();
             await db.unavailabilities.clear();
+            await db.preferences.clear();
+            await db.preferenceCatalogs.clear();
             await db.checkpoints.clear();
             await db.metadata.update('cache', { lastCachedAt: null });
           },
@@ -137,6 +175,8 @@ function repositories(db: AccountDatabase) {
           }
           await db.profiles.clear();
           await db.unavailabilities.clear();
+          await db.preferences.clear();
+          await db.preferenceCatalogs.clear();
           await db.pendingCommands.clear();
           await db.pendingRecords.clear();
           await db.checkpoints.clear();

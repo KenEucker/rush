@@ -6,14 +6,17 @@ use App\Enums\OrganizationRole;
 use App\Exceptions\RevisionConflict;
 use App\Exceptions\SyncProtocolConflict;
 use App\Http\Resources\MemberProfileResource;
+use App\Http\Resources\PreferenceProfileResource;
 use App\Http\Resources\UnavailabilityResource;
 use App\Models\MemberProfile;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\PreferenceProfile;
 use App\Models\Unavailability;
 use App\Models\User;
 use App\Services\Availability\SaveUnavailability;
 use App\Services\Identity\UpdateMemberProfile;
+use App\Services\Preferences\SavePreferenceProfile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -30,10 +33,14 @@ class PushOperation
             abort_if($rangerMembership !== null && ($membership->id !== $rangerMembership || $membership->role !== OrganizationRole::Ranger), 403, 'Your Ranger access changed. Contact Management; saved intent is preserved.');
             $command = Validator::make($input, [
                 'operation_id' => ['required', 'uuid'],
-                'type' => ['required', 'in:member_profile.update,unavailability.save'],
+                'type' => ['required', 'in:member_profile.update,unavailability.save,preference_profile.save'],
                 'record_id' => ['required', 'uuid'],
-                'expected_revision' => ($input['type'] ?? null) === 'unavailability.save' ? ['present', 'nullable', 'integer', 'min:1', 'max:2147483646'] : ['required', 'integer', 'min:1', 'max:2147483646'],
-                'payload' => ['required', ($input['type'] ?? null) === 'unavailability.save' ? 'array:membership_id,starts_at,ends_at' : 'array:display_name,phone'],
+                'expected_revision' => ($input['type'] ?? null) !== 'member_profile.update' ? ['present', 'nullable', 'integer', 'min:1', 'max:2147483646'] : ['required', 'integer', 'min:1', 'max:2147483646'],
+                'payload' => ['required', match ($input['type'] ?? null) {
+                    'preference_profile.save' => 'array:membership_id,season_id,week_starts_on,preferred_shift_ids,hours_mode,desired_weekly_minutes,days_off',
+                    'unavailability.save' => 'array:membership_id,starts_at,ends_at',
+                    default => 'array:display_name,phone',
+                }],
             ])->validate();
             $command['operation_id'] = strtolower($command['operation_id']);
             $command['record_id'] = strtolower($command['record_id']);
@@ -41,7 +48,16 @@ class PushOperation
             ksort($command['payload']);
             ksort($command);
             $availability = $command['type'] === 'unavailability.save';
-            if ($availability) {
+            $preferences = $command['type'] === 'preference_profile.save';
+            if ($preferences) {
+                Gate::forUser($actor)->authorize('create', [PreferenceProfile::class, $membership]);
+                abort_unless(($command['payload']['membership_id'] ?? null) === $membership->id, 403);
+                $existing = PreferenceProfile::query()->find($command['record_id']);
+                if ($existing) {
+                    Gate::forUser($actor)->authorize('update', $existing);
+                    abort_unless($existing->organization_id === $organization->id, 403);
+                }
+            } elseif ($availability) {
                 Gate::forUser($actor)->authorize('create', [Unavailability::class, $membership]);
                 abort_unless(($command['payload']['membership_id'] ?? null) === $membership->id, 403);
                 $existing = Unavailability::query()->find($command['record_id']);
@@ -70,7 +86,10 @@ class PushOperation
                 return $result;
             }
             try {
-                if ($availability) {
+                if ($preferences) {
+                    $updated = app(SavePreferenceProfile::class)->handle($actor, $membership, $command['record_id'], $command['expected_revision'], $command['payload']);
+                    $result = ['operation_id' => $command['operation_id'], 'status' => 'accepted', 'preference_profile' => (new PreferenceProfileResource($updated))->resolve()];
+                } elseif ($availability) {
                     $updated = app(SaveUnavailability::class)->handle($actor, $membership, $command['record_id'], $command['expected_revision'], $command['payload']);
                     $result = ['operation_id' => $command['operation_id'], 'status' => 'accepted',
                         'unavailability' => (new UnavailabilityResource($updated))->resolve()];
