@@ -30,19 +30,18 @@ type Staffing = {
 type CoverageWrite = {
   expected_revision: number | null; // null for initial configuration
   expected_season_revision: number;
-  model: 'dedicated' | 'shared';
   shifts: ShiftDefinition[];
   areas: Area[];
-  groups: Group[]; // empty in dedicated mode
+  groups: Group[];
   staffing: Staffing[];
   reason: string;
 };
 type CoverageSnapshot = Omit<CoverageWrite,
-  'expected_revision' | 'expected_season_revision' | 'reason' | 'model'> & {
+  'expected_revision' | 'expected_season_revision' | 'reason'> & {
   phase_id: string;
   revision: number | null;
   season_revision: number;
-  model: 'dedicated' | 'shared' | null;
+  model: 'dedicated' | 'shared' | 'mixed' | null; // derived summary only; null with no staffing
 };
 ```
 
@@ -51,12 +50,22 @@ editing rows; omitted rows are removed from current configuration. Names are
 unique ignoring case; references match exact names in the new payload. Shared
 groups must name existing areas without duplicates. One staffing row per
 shift/target is permitted. Dedicated rows must leave group_name blank/null;
-shared rows must leave area_name blank/null. No mixed model is accepted.
+shared rows must leave area_name blank/null. Both types may coexist in the same
+phase and shift. Exactly one target is required on each row. The old top-level
+write `model` is ignored; the response summary is derived from staffing rows and
+does not constrain them. Groups may be configured before staffing is entered.
 Zero positions is explicit; absent shift/target pairs remain unconfigured.
 
 Orchid uses `/admin/organizations/{organization}/phases/{phase}/coverage` with
 only GET and POST `save` exposed. It invokes SavePhaseCoverage and adapts only
-form field names, missing matrix arrays and comma-separated group members.
+form field names and missing matrix arrays. Group area names are selected as
+removable pills and submitted as an array. Staffing shift, dedicated-area and
+shared-group dropdowns follow the current form's definitions, including unsaved
+additions.
+Each staffing target can be cleared; exactly one target must be set on each row.
+There is no phase-wide coverage model selector.
+Removed/renamed selected references remain marked “not defined” for explicit
+correction. Failed saves preserve selections; Server validation is authoritative.
 
 ## Optional manual assignment source context
 
@@ -69,7 +78,8 @@ starts_at, ends_at and reason:
 type AssignmentShiftInput = {
   phase_id: string;
   shift_id: string;
-  target_id: string; // area UUID in dedicated mode, group UUID in shared mode
+  target_id: string; // same-phase area or group UUID
+  model?: 'dedicated' | 'shared'; // optional target type; required if UUID exists in both collections
   date: string; // YYYY-MM-DD local shift start date within phase
   offset?: string | null; // ±HH:mm; required for repeated DST start times
   expected_coverage_revision: number;
@@ -89,7 +99,10 @@ The existing response gains `shift_context: AssignmentShiftContext | null`.
 Top-level starts_at/ends_at remain the actual assignment bounds, in whole-second
 UTC `YYYY-MM-DDTHH:mm:ssZ` form. They must be a positive subinterval of the whole
 shift; matching both whole-shift bounds yields is_partial=false. The Server
-derives the snapshot and partial flag. Supplying stale configuration yields 409;
-invalid date/target/bounds or DST gap/fold yields 422. Omitting `shift` on an edit
+derives the snapshot and partial flag. The target's type is resolved independently
+of other staffing rows. An explicit
+type must match the target; ambiguous UUIDs without a type are rejected (422).
+Supplying stale configuration yields 409; invalid date/target/bounds or DST
+gap/fold yields 422. Omitting `shift` on an edit
 preserves the prior context and revalidates the interval against it. Supplying
 `shift: null` is invalid. Older intervals without source context remain supported.

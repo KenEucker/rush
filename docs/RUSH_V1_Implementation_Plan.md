@@ -80,6 +80,16 @@ A task is done only when its stated outcome works through the relevant UI/API, p
 
 **Milestone demonstration:** Start from a clean checkout, authenticate as each role, inspect authorization differences, and open the Ranger Client and Orchid through the intended routes.
 
+### RUSH-002 development evidence
+
+RUSH-002 development follow-up: `compose.dev.yaml` adds opt-in, loopback-only
+Caddy routing to an internal Quasar HMR server and mounted Laravel source with
+PHP timestamp validation. Production routing/images and durable volumes retain
+their existing behavior. `npm run docker:dev:test` verifies live PHP/Blade and
+Vue updates without container recreation, same-origin sessions/Orchid, and
+service-worker retirement preserving IndexedDB. This supports R-01–R-38 through
+Technical §4; production-built PWA tests remain the offline acceptance evidence.
+
 ### RUSH-004 implementation evidence
 
 RUSH-001–003 are prerequisites. RUSH-004 implements Technical §8 (cross-cutting
@@ -282,7 +292,7 @@ human review and merge remain necessary for task and milestone completion.
 | Task | Implementation and acceptance | Requirements |
 |---|---|---|
 | **RUSH-015** Seasons, phases, calendar policy | Create seasons and dated phases, explicit time zone, week boundaries, phase changes, tested overnight/DST handling. Resolve Requirements §11 date/time policy. | R-01, R-11 |
-| **RUSH-016** Shifts, areas and phase coverage | Configurable shift starts/durations, coverage areas, dedicated *or* shared model per phase, staffing counts and partial manual assignment representation; prohibit mixing models. | R-02, R-03 |
+| **RUSH-016** Shifts, areas and phase coverage | Configurable shift starts/durations, coverage areas, dedicated and shared staffing within a phase, staffing counts and partial manual assignment representation; exactly one same-phase area or group per staffing row (owner-approved October 13, 2026). | R-02, R-03 |
 | **RUSH-017** Scheduling policies | Phase-specific hour targets/planned caps/overtime warnings and shift desirability baseline; document exact classification scope and labor-policy validation dependencies. | R-09, R-11, R-29 |
 | **RUSH-018** Complete unavailability workflow | Extend proof slice: create/edit time spans online/offline; Management edits on behalf with audit; notices and acknowledgments, affected-assignment/gap flags; acknowledge does not repair schedule. | R-07, R-08 |
 | **RUSH-019** Ranger preference profiles | Default profile, full-week overrides, preferred shifts, weekly desired hours, consecutive/separated days-off preference; return to default next week; editable offline. Resolve override semantics. | R-09, R-10 |
@@ -319,7 +329,7 @@ scenario assignments. Human review, required CI and merge remain necessary.
 RUSH-001–015 are merged prerequisites on production, including the Milestone 2
 offline gate. RUSH-016 implements R-02/R-03 configuration: phase-specific local
 shift starts and elapsed durations, UUID areas/groups, dedicated or shared staffing
-counts with mixed-model rejection, scoped Orchid/API administration, revision
+counts with exclusive targets per row, scoped Orchid/API administration, revision
 checks and transactional actor/reason audits. Manual assignment intervals can
 retain immutable whole-shift/area context and represent a partial interval.
 See [ADR 0016](decisions/0016-phase-coverage.md),
@@ -327,6 +337,14 @@ See [ADR 0016](decisions/0016-phase-coverage.md),
 Pest covers validation, authorization, rollback, independent phases, DST,
 partial bounds and PostgreSQL concurrent managers. Playwright covers desktop/mobile
 configuration, reload, model changes, validation and retained stale input.
+The RUSH-016 usability follow-up adds removable shared-area pills and staffing
+shift/area/group dropdowns sourced from current unsaved definitions, with browser coverage
+for selection removal and retained invalid references.
+The owner-approved R-03 revision permits both staffing types in the same phase.
+The phase-wide selector and database restriction are removed; per-row exclusivity,
+phase ownership, revisions, audits and immutable assignment context remain enforced.
+Migration preservation/rollback and PostgreSQL constraints have regression tests,
+and desktop/mobile coverage exercises a mixed configuration through save/reload.
 Administration stays online; no Client database or sync changes. Scenarios 1–2
 have configuration evidence; generation/gaps/publication and all nine full
 acceptance-scenario owners remain unchanged. Human review, CI and merge remain

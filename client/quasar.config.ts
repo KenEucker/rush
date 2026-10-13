@@ -9,6 +9,8 @@ import {
 } from './src/pwa/cachePolicy';
 
 export default defineConfig((/* ctx */) => {
+  const dockerDev = process.env.RUSH_DOCKER_DEV === '1';
+  const devOrigin = new URL(process.env.RUSH_DEV_ORIGIN ?? 'https://localhost');
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
     // preFetch: true,
@@ -87,14 +89,30 @@ export default defineConfig((/* ctx */) => {
       // vueDevtools: true,
       // https: true,
       open: false,
-      proxy: {
-        '/api': { target: 'http://127.0.0.1:8000' },
-        '/sanctum': { target: 'http://127.0.0.1:8000' },
-        '/login': { target: 'http://127.0.0.1:8000' },
-        '/logout': { target: 'http://127.0.0.1:8000' },
-        '/admin': { target: 'http://127.0.0.1:8000' },
-        '/vendor/orchid': { target: 'http://127.0.0.1:8000' },
-      },
+      ...(dockerDev
+        ? {
+            host: '0.0.0.0',
+            port: 9000,
+            strictPort: true,
+            allowedHosts: [devOrigin.hostname],
+            watch: { usePolling: true, interval: 300 },
+            hmr: {
+              protocol: devOrigin.protocol === 'https:' ? ('wss' as const) : ('ws' as const),
+              host: devOrigin.hostname,
+              clientPort: Number(devOrigin.port || (devOrigin.protocol === 'https:' ? 443 : 80)),
+            },
+          }
+        : {}),
+      proxy: dockerDev
+        ? {}
+        : {
+            '/api': { target: 'http://127.0.0.1:8000' },
+            '/sanctum': { target: 'http://127.0.0.1:8000' },
+            '/login': { target: 'http://127.0.0.1:8000' },
+            '/logout': { target: 'http://127.0.0.1:8000' },
+            '/admin': { target: 'http://127.0.0.1:8000' },
+            '/vendor/orchid': { target: 'http://127.0.0.1:8000' },
+          },
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework

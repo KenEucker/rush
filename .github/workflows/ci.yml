@@ -162,3 +162,40 @@ jobs:
       - name: Remove only the disposable CI stack
         if: always()
         run: docker compose -p rush-ci -f docker/compose.ci.yaml down --volumes --remove-orphans
+
+  development:
+    name: Development (live PHP, Blade, HMR, sessions)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      APP_KEY: base64:4JgDPkNG6PpRLCpJvf4n3uGRrjkk+ySOGFbqVDJcX8k=
+      APP_URL: http://localhost:9188
+      RUSH_SITE_ADDRESS: http://:80
+      RUSH_HTTP_PORT: '9188'
+      RUSH_HTTPS_PORT: '9448'
+      SESSION_SECURE_COOKIE: 'false'
+      POSTGRES_DB: rush_dev_test
+      POSTGRES_USER: rush_dev_test
+      POSTGRES_PASSWORD: disposable-dev-only
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.16.0'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci --prefix client
+      - run: npx --prefix client playwright install --with-deps chromium
+      - name: Start isolated development fixture
+        run: docker compose -p rush-dev-test -f compose.yaml -f compose.dev.yaml up -d --build --wait --wait-timeout 180
+      - name: Seed disposable development fixture
+        run: docker compose -p rush-dev-test -f compose.yaml -f compose.dev.yaml exec -T --user www-data server php artisan migrate --seed --force
+      - run: npm run docker:dev:test
+      - name: Development diagnostics
+        if: failure()
+        run: docker compose -p rush-dev-test -f compose.yaml -f compose.dev.yaml logs --no-color
+      - name: Remove only the disposable development fixture
+        if: always()
+        run: docker compose -p rush-dev-test -f compose.yaml -f compose.dev.yaml down --volumes

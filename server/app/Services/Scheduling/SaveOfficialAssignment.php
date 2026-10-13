@@ -28,7 +28,7 @@ class SaveOfficialAssignment
                 'starts_at' => ['required', 'date_format:Y-m-d\TH:i:s\Z'],
                 'ends_at' => ['required', 'date_format:Y-m-d\TH:i:s\Z', 'after:starts_at'],
                 'reason' => ['required', 'string', 'max:500'],
-                'shift' => ['sometimes', 'array:phase_id,shift_id,target_id,date,offset,expected_coverage_revision,expected_season_revision'],
+                'shift' => ['sometimes', 'array:phase_id,shift_id,target_id,model,date,offset,expected_coverage_revision,expected_season_revision'],
             ])->validate();
             $ranger = OrganizationMembership::query()->whereKey($values['membership_id'])
                 ->where('organization_id', $organization->id)->lockForUpdate()->first();

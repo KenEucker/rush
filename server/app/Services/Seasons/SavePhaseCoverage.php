@@ -10,7 +10,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class SavePhaseCoverage
@@ -27,7 +26,6 @@ class SavePhaseCoverage
             $values = Validator::make($input, [
                 'expected_revision' => ['present', 'nullable', 'integer', 'between:1,2147483646'],
                 'expected_season_revision' => ['required', 'integer', 'min:1'],
-                'model' => ['required', Rule::in(['dedicated', 'shared'])],
                 'shifts' => ['required', 'array', 'max:100'],
                 'shifts.*' => ['array:id,name,start_time,duration_minutes'],
                 'shifts.*.id' => ['nullable', 'uuid', 'distinct'],
@@ -56,12 +54,6 @@ class SavePhaseCoverage
             $revision = $values['expected_revision'] === null ? null : (int) $values['expected_revision'];
             if ($before['revision'] !== $revision || $season->revision !== (int) $values['expected_season_revision']) {
                 throw new RevisionConflict;
-            }
-            if ($values['model'] === 'dedicated' && $values['groups'] !== []) {
-                throw ValidationException::withMessages(['groups' => 'Dedicated coverage cannot contain shared groups.']);
-            }
-            if ($values['model'] === 'shared' && $values['groups'] === []) {
-                throw ValidationException::withMessages(['groups' => 'Shared coverage needs at least one area group.']);
             }
             // Remove dependent configuration only, never assignment snapshots or history.
             DB::table('coverage_staffing')->where('phase_id', $id)->delete();
@@ -94,21 +86,25 @@ class SavePhaseCoverage
                     DB::table('coverage_group_areas')->insert(['phase_id' => $id, 'group_id' => $maps['groups'][$group['name']], 'area_id' => $area]);
                 }
             }
-            DB::table('phase_coverages')->updateOrInsert(['phase_id' => $id], ['model' => $values['model'], 'revision' => ($revision ?? 0) + 1]);
+            DB::table('phase_coverages')->updateOrInsert(['phase_id' => $id], ['revision' => ($revision ?? 0) + 1]);
             $seen = [];
             foreach ($values['staffing'] as $index => $row) {
-                $dedicated = $values['model'] === 'dedicated';
+                $dedicated = filled($row['area_name'] ?? null);
+                if ($dedicated === filled($row['group_name'] ?? null)) {
+                    throw ValidationException::withMessages(["staffing.$index" => 'Choose exactly one dedicated area or shared group for each staffing row.']);
+                }
                 $shift = $maps['shifts'][$row['shift_name']] ?? null;
                 $target = $maps[$dedicated ? 'areas' : 'groups'][$row[$dedicated ? 'area_name' : 'group_name'] ?? ''] ?? null;
-                if (! $shift || ! $target || filled($row[$dedicated ? 'group_name' : 'area_name'] ?? null)) {
-                    throw ValidationException::withMessages(["staffing.$index" => 'Use a shift and '.($dedicated ? 'dedicated area' : 'shared group').' from this phase only; coverage models cannot be mixed.']);
+                if (! $shift || ! $target) {
+                    throw ValidationException::withMessages(["staffing.$index" => 'Choose a shift and coverage target defined in this phase.']);
                 }
-                $pair = $shift.':'.$target;
+                $model = $dedicated ? 'dedicated' : 'shared';
+                $pair = $shift.':'.$model.':'.$target;
                 if (isset($seen[$pair])) {
                     throw ValidationException::withMessages(["staffing.$index" => 'Set one staffing count per shift and coverage target.']);
                 }
                 $seen[$pair] = true;
-                DB::table('coverage_staffing')->insert(['id' => (string) Str::uuid(), 'phase_id' => $id, 'model' => $values['model'],
+                DB::table('coverage_staffing')->insert(['id' => (string) Str::uuid(), 'phase_id' => $id, 'model' => $model,
                     'shift_id' => $shift, 'area_id' => $dedicated ? $target : null, 'group_id' => $dedicated ? null : $target, 'positions' => (int) $row['positions']]);
             }
             $after = $this->coverage->snapshot($phase);
