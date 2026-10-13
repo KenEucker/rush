@@ -15,8 +15,8 @@
     <h2 class="h5">{{ $season->name }} · {{ $phase->name }}</h2>
     <p>{{ \Carbon\CarbonImmutable::parse($phase->starts_on, 'UTC')->format('D, M j, Y') }}
         through {{ \Carbon\CarbonImmutable::parse($phase->ends_on, 'UTC')->format('D, M j, Y') }} · {{ $season->timezone }}</p>
-    <p><a href="{{ route('platform.seasons', [$organization->id, $season->id]) }}">Back to season and phases</a> ·
-        <a href="{{ route('platform.phase-coverage', [$organization->id, $phase->id]) }}">Configure shifts and coverage</a></p>
+    <p><a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.seasons', [$organization->id, $season->id]) }}">Back to season and phases</a> ·
+        <a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.phase-coverage', [$organization->id, $phase->id]) }}">Configure shifts and coverage</a></p>
     @if($configuration['requires_review'])
         <p role="status">Policies need configuration or review. Configure shifts first, then save policies against the current season and coverage.</p>
     @else

@@ -3,8 +3,8 @@
     <p>Configure seasons, coverage, events and attendance. A server connection is required.</p>
     <ul>
         @foreach($organizations as $organization)
-            <li><a href="{{ route('platform.seasons', [$organization->id, 'new']) }}">Seasons and phases — {{ $organization->name }}</a></li>
-            <li><a href="{{ route('platform.unavailability', [$organization->id, 'new']) }}">Unavailability notices — {{ $organization->name }} ({{ $organization->unavailability_notice_count }} need acknowledgment)</a></li>
+            <li><a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.seasons', [$organization->id, 'new']) }}">Seasons and phases — {{ $organization->name }}</a></li>
+            <li><a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.unavailability', [$organization->id, 'new']) }}">Unavailability notices — {{ $organization->name }} ({{ $organization->unavailability_notice_count }} need acknowledgment)</a></li>
         @endforeach
     </ul>
     <section id="events" aria-labelledby="events-heading" class="mt-4">
@@ -14,9 +14,13 @@
             <h3 class="h6">{{ $organization->name }}</h3>
             <ul>
                 @forelse($organization->seasons as $season)
-                    <li><a href="{{ route('platform.events', [$organization->id, $season->id, 'new']) }}">Events and attendance — {{ $season->name }}</a></li>
+                    <li><a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.events', [$organization->id, $season->id, 'new']) }}">Events and attendance — {{ $season->name }}</a></li>
                 @empty
-                    <li><a href="{{ route('platform.seasons', [$organization->id, 'new']) }}">Create a season to configure events</a></li>
+                    @if(app(\App\Orchid\ManagementYear::class)->context()['readOnly'])
+                        <li>No seasons in this year.</li>
+                    @else
+                        <li><a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.seasons', [$organization->id, 'new']) }}">Create a season to configure events</a></li>
+                    @endif
                 @endforelse
             </ul>
         @endforeach

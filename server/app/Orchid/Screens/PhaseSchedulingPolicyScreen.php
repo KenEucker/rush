@@ -5,6 +5,7 @@ namespace App\Orchid\Screens;
 use App\Exceptions\RevisionConflict;
 use App\Models\Organization;
 use App\Models\Season;
+use App\Orchid\ManagementYear;
 use App\Services\Seasons\PhaseCoverage;
 use App\Services\Seasons\PhaseSchedulingPolicy;
 use App\Services\Seasons\SavePhaseSchedulingPolicy;
@@ -15,11 +16,10 @@ use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Matrix;
 use Orchid\Screen\Fields\Select;
-use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
-class PhaseSchedulingPolicyScreen extends Screen
+class PhaseSchedulingPolicyScreen extends ManagementScreen
 {
     public array $shiftOptions = [];
 
@@ -46,6 +46,10 @@ class PhaseSchedulingPolicyScreen extends Screen
 
     public function commandBar(): iterable
     {
+        if (app(ManagementYear::class)->context()['readOnly']) {
+            return [];
+        }
+
         return [Button::make('Save scheduling policies')->method('save')->icon('bs.check-circle')];
     }
 

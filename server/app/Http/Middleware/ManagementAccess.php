@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Organization;
+use App\Orchid\ManagementYear;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -21,6 +22,9 @@ class ManagementAccess
         $availabilityRoute = $request->routeIs('platform.unavailability') &&
             ($request->isMethod('GET') || ($request->isMethod('POST') && in_array($request->route('method'), ['save', 'acknowledge'], true)));
         abort_unless($seasonRoute || $availabilityRoute || ($request->isMethod('GET') && $request->routeIs('platform.index', 'platform.main')), 404);
+
+        $year = app(ManagementYear::class)->context();
+        abort_if(! $request->isMethodSafe() && $year['readOnly'], 403, 'Past years are read-only.');
 
         return $next($request);
     }

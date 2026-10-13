@@ -296,7 +296,7 @@ human review and merge remain necessary for task and milestone completion.
 | **RUSH-017** Scheduling policies | Phase-specific hour targets/planned caps/overtime warnings and shift desirability baseline; document exact classification scope and labor-policy validation dependencies. | R-09, R-11, R-29 |
 | **RUSH-018** Complete unavailability workflow | Extend proof slice: create/edit time spans online/offline; Management edits on behalf with audit; notices and acknowledgments, affected-assignment/gap flags; acknowledge does not repair schedule. | R-07, R-08 |
 | **RUSH-019** Ranger preference profiles | Default profile, week-scoped field overrides with unspecified fields inherited from the current default (owner-approved ADR 0019), preferred shifts, weekly desired hours, consecutive/separated days-off preference; return to default next week; editable offline. | R-09, R-10 |
-| **RUSH-020** One-off events and paid attendance | Dated, nonrecurring events, paid attendance assignments, number/percentage targets, choice whether scheduled shifts count, independent coverage/event evaluation. Resolve event-counting rule. | R-06 |
+| **RUSH-020** One-off events and paid attendance | Dated, nonrecurring events, paid attendance assignments, number/percentage targets, choice whether scheduled shifts count, independent coverage/event evaluation. Resolve event-counting rule. Owner-approved follow-up: Management year navigation and read-only past starting years. | R-01, R-06 |
 | **RUSH-021** Configuration UI and tests | End-to-end phase/coverage/availability/preferences/event configuration with management and Ranger interfaces, permissions, validation, and sync tests. | R-01–R-11 |
 
 **Milestone demonstration:** Configure a low-staff phase and a 24/7 phase with distinct models, Ranger availability and preference overrides, and a single Monday Meeting without recurrence.
@@ -423,6 +423,12 @@ See [ADR 0020](decisions/0020-one-off-events.md),
 Pest covers permissions, validation, DST/week boundaries, rollback, constraints,
 and concurrent managers. Playwright exercises the form on desktop/mobile,
 save/reload, paid attendance, validation, and retained conflicting input.
+
+Owner-approved RUSH-020 follow-up: Management year selector and navigation
+scoped to season starting year (R-01/R-06). Past starting years lock the entire
+season, even across New Year, with shared-service/API enforcement. Evidence:
+`ManagementYearTest.php` and `management-years.spec.ts` cover historical views,
+backdating rejection, time-zone boundaries, authorization and independent tabs.
 Administration remains online; no Dexie schema or sync protocol change.
 Scenario 6 gains event/attendance configuration evidence. RUSH-022/023 retain
 generation input snapshots; RUSH-037–042 retain timesheet/meeting-pay integration
@@ -499,7 +505,7 @@ The following is the authoritative task assignment index. Several requirements s
 
 | Requirement | Primary task(s) |
 |---|---|
-| R-01 Season and phases | 015, 021 |
+| R-01 Season and phases | 015, 020 (year archive), 021 |
 | R-02 Configurable shifts | 016, 023 |
 | R-03 Coverage model | 016, 025 |
 | R-04 Gaps | 025, 040 |

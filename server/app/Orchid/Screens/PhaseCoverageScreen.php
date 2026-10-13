@@ -5,6 +5,7 @@ namespace App\Orchid\Screens;
 use App\Exceptions\RevisionConflict;
 use App\Models\Organization;
 use App\Models\Season;
+use App\Orchid\ManagementYear;
 use App\Services\Seasons\PhaseCoverage;
 use App\Services\Seasons\SavePhaseCoverage;
 use Illuminate\Http\RedirectResponse;
@@ -14,11 +15,10 @@ use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Matrix;
 use Orchid\Screen\Fields\Select;
-use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
-class PhaseCoverageScreen extends Screen
+class PhaseCoverageScreen extends ManagementScreen
 {
     public function name(): ?string
     {
@@ -41,6 +41,10 @@ class PhaseCoverageScreen extends Screen
 
     public function commandBar(): iterable
     {
+        if (app(ManagementYear::class)->context()['readOnly']) {
+            return [];
+        }
+
         return [Button::make('Save phase coverage')->method('save')->icon('bs.check-circle')];
     }
 

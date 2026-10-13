@@ -53,3 +53,25 @@ Events must lie within the season. Later season edits preserve saved instants
 and mark the event for review. No new durable Client store or offline queue is
 introduced. Published Ranger event visibility belongs to RUSH-029; this task's
 configuration and evaluation remain Management-only.
+
+## Management year browsing (owner-approved follow-up)
+
+The owner requested a year selector and read-only past years, and explicitly
+chose to group a cross-year season under its **starting year**, locking the
+entire season when that year becomes past. The boundary is local January 1 in
+the season's IANA time zone. Seasons, phases, coverage, policies and events
+remain viewable; their shared Server services reject edits, new events within
+archived seasons, and creation/backdating of seasons into past years.
+
+The selector appears on every Management screen. Menus and season lists contain
+only seasons starting in the selected year. Existing record URLs derive their
+year from the record; list/create links carry the year in the URL. No shared
+session preference is used, so separate tabs remain independent. Available
+season/notice years, the current year and next year are selectable. Current/future
+configuration keeps its existing validation and revision checks.
+
+Unavailability notices are grouped by their starting instant's calendar year
+in the organization's zone. Management cannot edit or acknowledge past-year
+notices. Ranger availability sync behavior is unchanged. This is a Management
+configuration archive, not a new hours-finalization or publication policy.
+No database migration, Client persistent store or sync protocol is required.

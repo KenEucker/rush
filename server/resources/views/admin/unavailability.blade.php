@@ -1,8 +1,10 @@
 <div class="bg-white rounded p-4 mb-3">
     <p>Every accepted range revision is a notice to Management. Acknowledging confirms it was seen; it does not repair the schedule or confirm coverage.</p>
-    <p><a href="{{ route('platform.unavailability', [$organization->id, 'new']) }}">Add unavailability on behalf of a Ranger</a></p>
+    @unless(app(\App\Orchid\ManagementYear::class)->context()['readOnly'])
+        <p><a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.unavailability', [$organization->id, 'new']) }}">Add unavailability on behalf of a Ranger</a></p>
+    @endunless
     @if($reportId)
-        <p><a href="{{ route('platform.unavailability', [$organization->id, 'new']) }}">View all notices</a></p>
+        <p><a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.unavailability', [$organization->id, 'new']) }}">View all notices</a></p>
     @endif
     <p>Times below are UTC. Overnight intervals include both dates. Enter exact UTC instants in the editor.</p>
     @forelse($reports as $notice)
@@ -20,13 +22,17 @@
                     <small>Assignment {{ $conflict['id'] }} · Revision {{ $conflict['revision'] }}</small>
                 </div>
             @endforeach
-            <a href="{{ route('platform.unavailability', [$organization->id, $notice['id']]) }}">Edit range</a>
-            @unless($notice['acknowledged_at'])
-                {!! \Orchid\Screen\Actions\Button::make('Acknowledge as seen')->method('acknowledge', ['notice_id' => $notice['id'], 'notice_revision' => $notice['revision']])->novalidate() !!}
+            @unless(app(\App\Orchid\ManagementYear::class)->context()['readOnly'])
+                <a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.unavailability', [$organization->id, $notice['id']]) }}">Edit range</a>
+                @unless($notice['acknowledged_at'])
+                    {!! \Orchid\Screen\Actions\Button::make('Acknowledge as seen')->method('acknowledge', ['notice_id' => $notice['id'], 'notice_revision' => $notice['revision']])->novalidate() !!}
+                @endunless
             @endunless
         </section>
     @empty
         <p>No unavailability notices.</p>
     @endforelse
-    <h2 class="h5">{{ $reportId ? 'Edit time range' : 'Add time range' }}</h2>
+    @unless(app(\App\Orchid\ManagementYear::class)->context()['readOnly'])
+        <h2 class="h5">{{ $reportId ? 'Edit time range' : 'Add time range' }}</h2>
+    @endunless
 </div>

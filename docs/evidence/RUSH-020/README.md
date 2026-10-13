@@ -18,6 +18,13 @@ ordinary shift/coverage records. Paid attendance exposes elapsed source interval
 split by local week/phase for later scheduling and timesheet integration.
 No recurrence, pay calculation, publication, or offline event administration.
 
+The owner-approved year selector scopes menus and lists to season starting year.
+Cross-year seasons appear only under their starting year and become read-only
+when that year is past in the season time zone. Historical configuration remains
+visible; Server services reject edits, new events and backdating into archived
+seasons. Notice browsing uses the organization's local starting year. Selected
+years live in URLs, not a shared session preference, so tabs remain independent.
+
 Management has separate expandable sidebar sections for **Seasons and phases**,
 **Shifts and coverage**, **Scheduling policies**, **Events and attendance**, and
 **Unavailability notices**. The menu links directly to authorized organization,
@@ -105,6 +112,33 @@ finish and were visually reviewed. No routes, permissions or database schema
 changed for the expanded menu.
 
 ## Migration and remaining gates
+
+Year-selector follow-up verification:
+
+- `php vendor/bin/pest --compact` on disposable PostgreSQL: **273 passed,
+  1,921 assertions**, no skips.
+- The full SQLite suite: **256 passed, 17 PostgreSQL-only cases skipped,
+  1,824 assertions**.
+- After final review added notice-only years, `php vendor/bin/pest
+  tests/Feature/ManagementYearTest.php --compact` on PostgreSQL:
+  **8 passed, 75 assertions**.
+- `php vendor/bin/pint --test`: **passed**.
+- Production-PWA fixture build, migrations and explicit historical browser
+  fixture: **passed**. CI invokes `tests/Fixtures/seed-management-years.php`
+  only against the isolated `rush_ci` database.
+- Final `npm run client:test:e2e -- management-years.spec.ts phase-coverage.spec.ts
+  phase-policies.spec.ts unavailability-management.spec.ts`: **8 passed** on
+  desktop/mobile. The existing event tests (**2 passed**) and season tests
+  (**6 passed**) also passed in the broader run. Initial duplicate-link test
+  selectors were scoped to the intended menu/page link, then rerun successfully.
+- Final Client lint, TypeScript, and convention tests (**8 tests**): **passed**.
+- Archive screenshots: [desktop](year-archive-desktop.png),
+  [mobile](year-archive-mobile.png); visually reviewed, with readable disabled
+  controls and no mobile horizontal overflow.
+
+This follow-up requires no additional migration or data rewrite. Restart PHP
+when deploying into a runtime that disables opcode timestamp checks. The local
+development PHP container was restarted; its database was not reseeded.
 
 Run `npm run docker:server:migrate -- --force` against the intended deployment
 after backup. The additive migration creates events, retained attendance, audit

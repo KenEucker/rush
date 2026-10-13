@@ -6,6 +6,7 @@ use App\Exceptions\RevisionConflict;
 use App\Models\Event;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Orchid\ManagementYear;
 use App\Services\Events\EventConfiguration;
 use App\Services\Events\SaveEvent;
 use Illuminate\Http\RedirectResponse;
@@ -15,11 +16,10 @@ use Illuminate\Validation\ValidationException;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Select;
-use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
-class EventScreen extends Screen
+class EventScreen extends ManagementScreen
 {
     public array $rangerOptions = [];
 
@@ -66,11 +66,19 @@ class EventScreen extends Screen
 
     public function commandBar(): iterable
     {
+        if (app(ManagementYear::class)->context()['readOnly']) {
+            return [];
+        }
+
         return [Button::make('Save event and attendance')->method('save')->icon('bs.check-circle')];
     }
 
     public function layout(): iterable
     {
+        if (app(ManagementYear::class)->context()['readOnly'] && request()->route('event') === 'new') {
+            return [Layout::view('admin.events')];
+        }
+
         return [Layout::view('admin.events'), Layout::rows([
             Input::make('configuration.id')->type('hidden'),
             Input::make('configuration.expected_revision')->type('hidden'),

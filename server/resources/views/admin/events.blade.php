@@ -1,11 +1,13 @@
 <div class="bg-white rounded p-4 mb-3">
     <h2 class="h5">{{ $season->name }} · {{ $season->timezone }}</h2>
     <p>Events happen once. A skipped week requires no recurrence cancellation. Attendance does not fill or repair ordinary area coverage.</p>
-    <a href="{{ route('platform.events', [$organization->id, $season->id, 'new']) }}">Create a one-off event</a>
+    @unless(app(\App\Orchid\ManagementYear::class)->context()['readOnly'])
+        <a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.events', [$organization->id, $season->id, 'new']) }}">Create a one-off event</a>
+    @endunless
     <ul class="mt-3">
         @forelse($events as $item)
             <li class="mb-3">
-                <a href="{{ route('platform.events', [$organization->id, $season->id, $item->id]) }}">{{ $item->name }}</a>
+                <a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.events', [$organization->id, $season->id, $item->id]) }}">{{ $item->name }}</a>
                 <div>{{ $item->starts_at->setTimezone($item->timezone)->format('D, M j, Y g:i A') }} – {{ $item->ends_at->setTimezone($item->timezone)->format('D, M j, Y g:i A') }} · {{ $item->timezone }}</div>
             </li>
         @empty

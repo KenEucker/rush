@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
+use App\Services\Seasons\ConfigurationYear;
 use App\Services\Seasons\SeasonCalendar;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,7 @@ class SaveEvent
             $configuration->season($actor, $organization, $seasonId);
             Organization::query()->whereKey($organization->id)->lockForUpdate()->firstOrFail();
             $season = $configuration->season($actor, $organization, $seasonId);
+            app(ConfigurationYear::class)->assertSeasonEditable($season);
             $values = Validator::make([...$input, 'id' => $id], [
                 'id' => ['required', 'uuid'],
                 'expected_revision' => ['present', 'nullable', 'integer', 'between:1,2147483646'],

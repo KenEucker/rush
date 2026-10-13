@@ -39,6 +39,12 @@ Each staffing row selects one shift and exactly one dedicated area or shared gro
 
 **R-06 Events and meetings.** Management creates individual dated events, including a paid event such as “Monday Meeting.” There is **no recurrence feature**. An event can specify staffing targets (number or percentage), and management decides whether already-scheduled shifts count or whether additional assignments are necessary. Event hours contribute to weekly scheduling and timesheets; ordinary area coverage and event staffing must be evaluated independently.
 
+Management configuration archive (owner-approved October 13, 2026; R-01/R-06):
+provide a year selector and scope navigation by season starting year. A season
+spanning years belongs only to its starting year. Once that year is past in its
+season time zone, its season/phase configuration and events are read-only,
+including through APIs. Preserve access to historical records. See ADR 0020.
+
 ## 3. Ranger availability and preferences
 
 **R-07 Unavailability.** Rangers mark periods when they **cannot work**; all other time is potentially schedulable. Unavailability is distinct from preferences and must be prominently considered by the scheduler. Management receives a notice and can acknowledge it so the Ranger knows it was seen. Acknowledgment does not mean the affected schedule has been repaired.

@@ -90,8 +90,8 @@ test('Management configures a one-off paid meeting, reviews staffing and retains
     ],
   ]) {
     const section = await openMenuSection(name!, slug!);
-    await section.locator(`a[href$="${path}"]`).click();
-    await expect(page).toHaveURL(new RegExp(`${path}$`));
+    await section.locator(`a[href*="${path}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`${path}(\\?|$)`));
   }
   const eventMenu = await openMenuSection('Events and attendance', 'events-and-attendance');
   await mkdir('../docs/evidence/RUSH-020', { recursive: true });

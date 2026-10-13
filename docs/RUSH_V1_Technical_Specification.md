@@ -173,6 +173,10 @@ The implementation should infer normalized data models with appropriate relation
 - Coverage type belongs to each staffing row: exactly one same-phase area or shared group. A phase may combine both types (R-03, owner-approved October 13, 2026); assignment context records the selected target's type.
 - Store authoritative event timestamps as UTC instants.
 - Associate scheduling configurations with an explicit season time zone.
+- Management year navigation groups seasons by their local starting year.
+  Past starting years are read-only in shared configuration services and APIs,
+  including cross-year seasons. List URLs preserve the selected year; record
+  URLs derive it from the record so tabs remain independent (ADR 0020).
 - Preserve histories for published assignments, management corrections, timesheets, and exports.
 - Use database transactions for operations affecting multiple related records.
 - Support organization scoping where appropriate, even when the initial installation contains only one organization.

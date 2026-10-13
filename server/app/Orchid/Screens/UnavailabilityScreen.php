@@ -7,6 +7,7 @@ use App\Exceptions\RevisionConflict;
 use App\Http\Resources\UnavailabilityResource;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Orchid\ManagementYear;
 use App\Services\Availability\ManageUnavailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -14,11 +15,10 @@ use Illuminate\Validation\ValidationException;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Select;
-use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
-class UnavailabilityScreen extends Screen
+class UnavailabilityScreen extends ManagementScreen
 {
     public array $rangers = [];
 
@@ -40,6 +40,8 @@ class UnavailabilityScreen extends Screen
             ->mapWithKeys(fn ($membership) => [$membership->id => $membership->user->name])->all();
         $current = $report === 'new' ? null : $records->firstWhere('id', $report);
         abort_if($report !== 'new' && ! $current, 404);
+        $year = app(ManagementYear::class)->context()['year'];
+        $records = $records->filter(fn ($record) => $record->starts_at->setTimezone($organization->timezone)->year === $year);
 
         return ['organization' => $organization,
             'reports' => ($current ? collect([$current]) : $records)->map(fn ($record) => (new UnavailabilityResource($record))->resolve()),
@@ -54,11 +56,19 @@ class UnavailabilityScreen extends Screen
 
     public function commandBar(): iterable
     {
+        if (app(ManagementYear::class)->context()['readOnly']) {
+            return [];
+        }
+
         return [Button::make('Save on behalf of Ranger')->method('save')->icon('bs.check-circle')];
     }
 
     public function layout(): iterable
     {
+        if (app(ManagementYear::class)->context()['readOnly']) {
+            return [Layout::view('admin.unavailability')];
+        }
+
         return [Layout::view('admin.unavailability'), Layout::rows([
             Input::make('entry.id')->type('hidden'),
             Input::make('entry.expected_revision')->type('hidden'),
