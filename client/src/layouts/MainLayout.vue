@@ -149,6 +149,7 @@ const showNavigation = computed(
 const navigation = [
   { to: '/', label: 'Overview', icon: 'home' },
   { to: '/calendar', label: 'Calendar preview', icon: 'calendar_month' },
+  { to: '/preferences', label: 'Preferences', icon: 'tune' },
   { to: '/availability', label: 'Availability', icon: 'event_busy' },
   { to: '/account', label: 'Your account', icon: 'person' },
 ];
@@ -175,7 +176,10 @@ async function loadSession() {
     try {
       await session.refresh();
       if (currentRequest !== request) return;
-      if (!session.identity && !(session.workspace && route.path === '/availability')) {
+      if (
+        !session.identity &&
+        !(session.workspace && ['/availability', '/preferences'].includes(route.path))
+      ) {
         if (session.workspace) {
           await router.replace('/availability');
           return;

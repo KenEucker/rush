@@ -5,12 +5,15 @@ namespace App\Services\Sync;
 use App\Enums\OrganizationRole;
 use App\Exceptions\SyncProtocolConflict;
 use App\Http\Resources\MemberProfileResource;
+use App\Http\Resources\PreferenceProfileResource;
 use App\Http\Resources\UnavailabilityResource;
 use App\Models\MemberProfile;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\PreferenceProfile;
 use App\Models\Unavailability;
 use App\Models\User;
+use App\Services\Preferences\PreferenceCatalog;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -52,12 +55,17 @@ class PullChanges
             $availability = Unavailability::query()->where('organization_id', $organization->id)
                 ->where('organization_membership_id', $membership->id)->orderBy('id')->get()
                 ->filter(fn ($record) => Gate::forUser($actor)->allows('view', $record));
+            $preferences = PreferenceProfile::query()->where('organization_id', $organization->id)
+                ->where('organization_membership_id', $membership->id)->orderBy('id')->get()
+                ->filter(fn ($record) => Gate::forUser($actor)->allows('view', $record));
             $visible = [
+                'preference_profile' => $preferences->mapWithKeys(fn ($record) => [$record->id => (new PreferenceProfileResource($record))->resolve()]),
+                'preference_catalog' => app(PreferenceCatalog::class)->forMembership($membership),
                 'member_profile' => $profiles->mapWithKeys(fn ($record) => [$record->id => (new MemberProfileResource($record))->resolve()]),
                 'unavailability' => $availability->mapWithKeys(fn ($record) => [$record->id => (new UnavailabilityResource($record))->resolve()]),
             ];
             $sequence = (int) $stream->sequence;
-            foreach (['member_profile' => 'sync_profiles', 'unavailability' => 'sync_unavailabilities'] as $type => $table) {
+            foreach (['member_profile' => 'sync_profiles', 'unavailability' => 'sync_unavailabilities', 'preference_profile' => 'sync_preferences', 'preference_catalog' => 'sync_preference_catalogs'] as $type => $table) {
                 $stored = DB::table($table)->where('membership_id', $membership->id)->get()->keyBy('record_id');
                 foreach ($visible[$type] as $id => $value) {
                     $previous = $stored->pull($id);

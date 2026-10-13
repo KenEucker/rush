@@ -1,5 +1,18 @@
 # Testing RUSH
 
+## Preference profiles (RUSH-019)
+
+Run Server `php vendor/bin/pest --filter=Preference --compact` against disposable
+PostgreSQL for inherited weekly fields, default resolution, calendar boundaries,
+validation, privacy, idempotency, audit rollback and simultaneous profile creation.
+Client `npm run test:unit` covers Dexie v4 migration, reactive form data, atomic
+queue writes/replacement, interruptions, conflicts and protocol validation.
+Run `npx playwright test --config playwright.integration.config.ts preferences.spec.ts`
+from `client/` against the production fixture below. It verifies desktop/mobile
+defaults, preferred shifts, inherited weekly fields, offline reload/reconnect,
+next-week fallback and two-session conflict recovery. Screenshots are saved in
+`docs/evidence/RUSH-019/`; see [the evidence](evidence/RUSH-019/README.md).
+
 ## Unavailability review (RUSH-018)
 
 `php vendor/bin/pest tests/Feature/ManageUnavailabilityTest.php

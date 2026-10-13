@@ -1,3 +1,11 @@
+import {
+  parsePreference,
+  parsePreferenceInput,
+  parsePreferenceCatalog,
+  type PreferenceProfile,
+  type PreferenceInput,
+  type PreferenceCatalog,
+} from '../api/preferences';
 import { ApiError, type ApiFailure } from '../api/http';
 import { parseProfile, type MemberProfile, type UpdateMemberProfile } from '../api/profiles';
 import type { PendingCommand } from '../database/types';
@@ -25,17 +33,25 @@ export interface AvailabilityOperation {
   expected_revision: number | null;
   payload: AvailabilityInput;
 }
-export type SyncOperation = ProfileOperation | AvailabilityOperation;
+export interface PreferenceOperation {
+  operation_id: string;
+  type: 'preference_profile.save';
+  record_id: string;
+  expected_revision: number | null;
+  payload: PreferenceInput;
+}
+export type SyncOperation = ProfileOperation | AvailabilityOperation | PreferenceOperation;
 export type OperationResult =
+  | { operation_id: string; status: 'accepted'; preference_profile: PreferenceProfile }
   | { operation_id: string; status: 'accepted'; profile: MemberProfile }
   | { operation_id: string; status: 'accepted'; unavailability: Unavailability }
   | { operation_id: string; status: 'rejected' | 'conflict'; error: ApiFailure };
 export interface PullPage {
   changes: {
     sequence: number;
-    record_type: 'member_profile' | 'unavailability';
+    record_type: 'member_profile' | 'unavailability' | 'preference_profile' | 'preference_catalog';
     record_id: string;
-    value: MemberProfile | Unavailability | null;
+    value: MemberProfile | Unavailability | PreferenceProfile | PreferenceCatalog | null;
   }[];
   checkpoint: string;
   has_more: boolean;
@@ -57,6 +73,27 @@ function invalid(): never {
 export function parseOperation(value: unknown): SyncOperation {
   const operation = object(value);
   const payload = object(operation.payload);
+  if (operation.type === 'preference_profile.save') {
+    if (
+      typeof operation.operation_id !== 'string' ||
+      !uuid.test(operation.operation_id) ||
+      typeof operation.record_id !== 'string' ||
+      !uuid.test(operation.record_id) ||
+      (operation.expected_revision !== null &&
+        (typeof operation.expected_revision !== 'number' ||
+          !Number.isInteger(operation.expected_revision) ||
+          operation.expected_revision < 1 ||
+          operation.expected_revision > 2147483646))
+    )
+      invalid();
+    return {
+      operation_id: operation.operation_id.toLowerCase(),
+      type: 'preference_profile.save',
+      record_id: operation.record_id.toLowerCase(),
+      expected_revision: operation.expected_revision,
+      payload: parsePreferenceInput(payload),
+    };
+  }
   if (operation.type === 'unavailability.save') {
     if (
       typeof operation.operation_id !== 'string' ||
@@ -140,10 +177,19 @@ export async function stageProfileUpdate(
 }
 
 export function pendingOperation(pending: PendingCommand): SyncOperation {
-  if (pending.recordType !== 'member_profile' && pending.recordType !== 'unavailability') invalid();
+  if (
+    pending.recordType !== 'member_profile' &&
+    pending.recordType !== 'unavailability' &&
+    pending.recordType !== 'preference_profile'
+  )
+    invalid();
   if (
     pending.command.type !==
-    (pending.recordType === 'member_profile' ? 'member_profile.update' : 'unavailability.save')
+    (pending.recordType === 'member_profile'
+      ? 'member_profile.update'
+      : pending.recordType === 'preference_profile'
+        ? 'preference_profile.save'
+        : 'unavailability.save')
   )
     invalid();
   return parseOperation({
@@ -162,6 +208,16 @@ export function parseResult(
 ): OperationResult {
   const result = object(value);
   if (result.operation_id !== operation.operation_id) invalid();
+  if (result.status === 'accepted' && operation.type === 'preference_profile.save') {
+    const record = parsePreference(result.preference_profile, organizationId, operation.record_id);
+    if (
+      record.membership_id !== operation.payload.membership_id ||
+      record.season_id !== operation.payload.season_id ||
+      record.week_starts_on !== operation.payload.week_starts_on
+    )
+      invalid();
+    return { operation_id: operation.operation_id, status: 'accepted', preference_profile: record };
+  }
   if (result.status === 'accepted' && operation.type === 'unavailability.save') {
     const record = parseUnavailability(result.unavailability, organizationId, operation.record_id);
     if (record.membership_id !== operation.payload.membership_id) invalid();
@@ -212,7 +268,10 @@ export function parsePullPage(value: unknown, organizationId: string): PullPage 
       typeof change.sequence !== 'number' ||
       !Number.isSafeInteger(change.sequence) ||
       change.sequence <= previous ||
-      (change.record_type !== 'member_profile' && change.record_type !== 'unavailability') ||
+      (change.record_type !== 'member_profile' &&
+        change.record_type !== 'unavailability' &&
+        change.record_type !== 'preference_profile' &&
+        change.record_type !== 'preference_catalog') ||
       typeof change.record_id !== 'string' ||
       !uuid.test(change.record_id)
     )
@@ -225,9 +284,13 @@ export function parsePullPage(value: unknown, organizationId: string): PullPage 
       value:
         change.value === null
           ? null
-          : change.record_type === 'unavailability'
-            ? parseUnavailability(change.value, organizationId, change.record_id)
-            : parseProfile(change.value, organizationId, change.record_id),
+          : change.record_type === 'preference_profile'
+            ? parsePreference(change.value, organizationId, change.record_id)
+            : change.record_type === 'preference_catalog'
+              ? parsePreferenceCatalog(change.value, organizationId, change.record_id)
+              : change.record_type === 'unavailability'
+                ? parseUnavailability(change.value, organizationId, change.record_id)
+                : parseProfile(change.value, organizationId, change.record_id),
     };
   });
   return { changes, checkpoint: page.checkpoint, has_more: page.has_more };
@@ -255,6 +318,33 @@ export async function stageAvailability(
     expectedRevision: revision,
     command: { type: operation.type, payload: { ...input } },
     localValue: { ...input },
+  });
+  return operation;
+}
+
+export async function stagePreference(
+  storage: AccountStorage,
+  input: PreferenceInput,
+  id: string = crypto.randomUUID(),
+  revision: number | null = null,
+  replacesOperationId?: string,
+): Promise<PreferenceOperation> {
+  const operation = parseOperation({
+    operation_id: crypto.randomUUID(),
+    type: 'preference_profile.save',
+    record_id: id,
+    expected_revision: revision,
+    payload: input,
+  });
+  if (operation.type !== 'preference_profile.save') invalid();
+  await storage.pending.stage({
+    operationId: operation.operation_id,
+    recordType: 'preference_profile',
+    ...(replacesOperationId ? { replacesOperationId } : {}),
+    recordId: id,
+    expectedRevision: revision,
+    command: { type: operation.type, payload: { ...operation.payload } },
+    localValue: { ...operation.payload },
   });
   return operation;
 }

@@ -192,6 +192,8 @@ it('validates bounded pull requests and rolls back projection and sequence on fa
 });
 
 it('reverses and reapplies the migration without altering existing profiles', function () {
+    $preferences = require database_path('migrations/2026_10_13_190000_create_preference_profiles.php');
+    $preferences->down();
     $acknowledgments = require database_path('migrations/2026_10_13_120000_add_unavailability_acknowledgments.php');
     $acknowledgments->down();
     $availability = require database_path('migrations/2026_10_09_234000_create_unavailability_tables.php');
@@ -202,5 +204,6 @@ it('reverses and reapplies the migration without altering existing profiles', fu
     $migration->up();
     $availability->up();
     $acknowledgments->up();
+    $preferences->up();
     $this->actingAs($this->actor)->postJson($this->base.'/push', $this->operation)->assertOk();
 });

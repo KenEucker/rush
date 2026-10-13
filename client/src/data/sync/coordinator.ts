@@ -1,3 +1,5 @@
+import type { PreferenceInput } from '../api/preferences';
+import { stagePreference } from './protocol';
 import { ApiError } from '../api/http';
 import { pullChanges, pushOperation } from '../api/sync';
 import type { UpdateMemberProfile } from '../api/profiles';
@@ -108,6 +110,18 @@ export class SyncCoordinator {
   async queueAvailability(input: AvailabilityInput, id?: string, revision: number | null = null) {
     if (this.stopped) throw new Error('Reopen this account before saving changes.');
     const operation = await stageAvailability(this.storage, input, id, revision);
+    if (this.started) this.wake();
+    return operation;
+  }
+
+  async queuePreference(
+    input: PreferenceInput,
+    id?: string,
+    revision: number | null = null,
+    replacesOperationId?: string,
+  ) {
+    if (this.stopped) throw new Error('Reopen this account before saving changes.');
+    const operation = await stagePreference(this.storage, input, id, revision, replacesOperationId);
     if (this.started) this.wake();
     return operation;
   }

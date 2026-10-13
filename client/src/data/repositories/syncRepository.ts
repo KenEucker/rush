@@ -1,3 +1,4 @@
+import { parsePreference, parsePreferenceCatalog } from '../api/preferences';
 import type { AccountDatabase } from '../database/database';
 import { parseProfile } from '../api/profiles';
 import { parseUnavailability } from '../api/availability';
@@ -69,11 +70,14 @@ export function syncRepository(db: AccountDatabase) {
           if (!command) return;
           const parsed = parseResult(result, db.scope.organizationId, pendingOperation(command));
           if (parsed.status === 'accepted') {
-            if ('unavailability' in parsed) {
+            if ('unavailability' in parsed || 'preference_profile' in parsed) {
               // Keep the local range visible if the connection drops before pull.
               // Retrying this already accepted operation ID remains idempotent.
               await db.pendingCommands.update(parsed.operation_id, {
-                acceptedRevision: parsed.unavailability.revision,
+                acceptedRevision:
+                  'unavailability' in parsed
+                    ? parsed.unavailability.revision
+                    : parsed.preference_profile.revision,
                 state: 'syncing',
                 problem: null,
               });
@@ -105,6 +109,8 @@ export function syncRepository(db: AccountDatabase) {
           [
             db.profiles,
             db.unavailabilities,
+            db.preferences,
+            db.preferenceCatalogs,
             db.pendingCommands,
             db.pendingRecords,
             db.checkpoints,
@@ -114,6 +120,46 @@ export function syncRepository(db: AccountDatabase) {
             const current = await db.checkpoints.get(SYNC_STREAM);
             if ((current?.token ?? null) !== expected) return false;
             for (const change of page.changes) {
+              if (change.record_type === 'preference_catalog') {
+                if (change.value === null) await db.preferenceCatalogs.delete(change.record_id);
+                else
+                  await db.preferenceCatalogs.put({
+                    id: change.record_id,
+                    value: parsePreferenceCatalog(
+                      change.value,
+                      db.scope.organizationId,
+                      change.record_id,
+                    ),
+                    cachedAt: now,
+                  });
+                continue;
+              }
+              if (change.record_type === 'preference_profile') {
+                const value =
+                  change.value === null
+                    ? null
+                    : parsePreference(change.value, db.scope.organizationId, change.record_id);
+                if (value === null) await db.preferences.delete(change.record_id);
+                else {
+                  const current = await db.preferences.get(change.record_id);
+                  if (!current || value.revision >= current.value.revision)
+                    await db.preferences.put({ id: change.record_id, value, cachedAt: now });
+                }
+                const pending = await db.pendingCommands
+                  .where('[recordType+recordId]')
+                  .equals(['preference_profile', change.record_id])
+                  .toArray();
+                for (const command of pending) {
+                  if (
+                    command.acceptedRevision !== undefined &&
+                    (value === null || value.revision >= command.acceptedRevision)
+                  ) {
+                    await db.pendingCommands.delete(command.operationId);
+                    await db.pendingRecords.delete(command.operationId);
+                  }
+                }
+                continue;
+              }
               if (change.record_type === 'unavailability') {
                 if (change.value === null) await db.unavailabilities.delete(change.record_id);
                 else {
@@ -133,7 +179,9 @@ export function syncRepository(db: AccountDatabase) {
                 for (const command of pending) {
                   if (
                     command.acceptedRevision !== undefined &&
-                    (change.value === null || change.value.revision >= command.acceptedRevision)
+                    (change.value === null ||
+                      ('revision' in change.value ? change.value.revision : 0) >=
+                        command.acceptedRevision)
                   ) {
                     await db.pendingCommands.delete(command.operationId);
                     await db.pendingRecords.delete(command.operationId);
@@ -145,7 +193,11 @@ export function syncRepository(db: AccountDatabase) {
                 await db.profiles.delete(change.record_id);
               } else {
                 const cached = await db.profiles.get(change.record_id);
-                if (!cached || change.value.revision > cached.value.revision) {
+                if (
+                  !cached ||
+                  parseProfile(change.value, db.scope.organizationId, change.record_id).revision >
+                    cached.value.revision
+                ) {
                   await db.profiles.put({
                     id: change.record_id,
                     value: parseProfile(change.value, db.scope.organizationId, change.record_id),
@@ -169,16 +221,22 @@ export function syncRepository(db: AccountDatabase) {
       return db.write(() =>
         db.transaction(
           'rw',
-          db.profiles,
-          db.unavailabilities,
-          db.checkpoints,
-          db.metadata,
-          db.syncState,
+          [
+            db.profiles,
+            db.unavailabilities,
+            db.preferences,
+            db.preferenceCatalogs,
+            db.checkpoints,
+            db.syncState,
+            db.metadata,
+          ],
           async () => {
             const current = await db.checkpoints.get(SYNC_STREAM);
             if ((current?.token ?? null) !== expected) return false;
             await db.profiles.clear();
             await db.unavailabilities.clear();
+            await db.preferences.clear();
+            await db.preferenceCatalogs.clear();
             await db.checkpoints.delete(SYNC_STREAM);
             await db.metadata.update('cache', { lastCachedAt: null });
             const state = (await db.syncState.get('coordinator')) ?? initialState();

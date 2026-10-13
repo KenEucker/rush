@@ -20,7 +20,7 @@ never writable command fields. No Workbox domain-response cache is permitted.
 }
 ```
 
-Both IDs are UUIDs; expected revision is an integer 1–2147483646. The sole command
+Both IDs are UUIDs; expected revision is an integer 1–2147483646. The foundation command
 type is `member_profile.update`. Payload keys are limited to `display_name` and
 `phone`; domain rules match [member-profile.md](member-profile.md). Omitted phone
 preserves it, explicit null clears it. Unknown command types are not executable.
@@ -89,3 +89,12 @@ then restarting with null. Preserve pending commands and local representations.
 Do not display old confirmed data as current after a visibility reset. HTTP 403
 means access is unavailable and requires account-security handling, not a blind
 retry loop. The coordinator/account lifecycle integration is RUSH-010/013.
+
+## Additional domain records
+
+RUSH-012/018 adds `unavailability.save` and `unavailability` pull records; see
+[availability](availability.md). RUSH-019 adds `preference_profile.save`,
+`preference_profile` and read-only `preference_catalog` pull records; see
+[preferences](preferences.md). Create commands accept a null expected revision.
+Their accepted receipts use `unavailability` or `preference_profile` respectively.
+All share the same ordered stream, queue, idempotency and authorization contract.
