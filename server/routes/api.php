@@ -7,9 +7,13 @@ use App\Http\Controllers\PhaseSchedulingPolicyController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SyncController;
+use App\Http\Controllers\UnavailabilityController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/organizations/{organization}/unavailability', [UnavailabilityController::class, 'index']);
+    Route::put('/organizations/{organization}/unavailability/{report}', [UnavailabilityController::class, 'save'])->middleware('throttle:120,1');
+    Route::post('/organizations/{organization}/unavailability/{report}/acknowledge', [UnavailabilityController::class, 'acknowledge'])->middleware('throttle:120,1');
     Route::get('/organizations/{organization}/phases/{phase}/policies', [PhaseSchedulingPolicyController::class, 'show']);
     Route::put('/organizations/{organization}/phases/{phase}/policies', [PhaseSchedulingPolicyController::class, 'save'])->middleware('throttle:120,1');
     Route::get('/organizations/{organization}/phases/{phase}/coverage', [PhaseCoverageController::class, 'show']);

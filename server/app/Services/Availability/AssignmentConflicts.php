@@ -16,6 +16,11 @@ class AssignmentConflicts
                 'id' => $assignment->id, 'revision' => $assignment->revision,
                 'starts_at' => $assignment->starts_at->utc()->format('Y-m-d\TH:i:s\Z'),
                 'ends_at' => $assignment->ends_at->utc()->format('Y-m-d\TH:i:s\Z'),
+                'affected_coverage' => [
+                    'starts_at' => $assignment->starts_at->max($report->starts_at)->utc()->format('Y-m-d\TH:i:s\Z'),
+                    'ends_at' => $assignment->ends_at->min($report->ends_at)->utc()->format('Y-m-d\TH:i:s\Z'),
+                    'target_name' => $assignment->shift_context['target_name'] ?? null,
+                ],
             ])->all();
     }
 }

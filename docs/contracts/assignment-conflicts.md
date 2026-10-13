@@ -42,3 +42,14 @@ request and never grant permission.
 403 leaves a rejected local operation and locks the workspace. 401/419 retain
 retryable failed intent until the same account is verified. Validation rejection
 details and stale-revision explanations remain durable and visible.
+
+## RUSH-018 coverage warning extension
+
+Each assignment conflict additionally includes `affected_coverage` with
+`starts_at`, `ends_at` (the positive intersection with the unavailable range) and
+`target_name` (immutable shift-context target, or null for a context-free interval).
+This identifies affected coverage needing Management review. It is not confirmed
+coverage or an aggregate count of missing positions. Do not sum per-report flags;
+overlapping reports may identify the same assignment. Endpoint-touching ranges
+do not conflict. Both the owner and authorized Management can see these flags
+through their respective availability surfaces; Ranger pull remains owner-only.
