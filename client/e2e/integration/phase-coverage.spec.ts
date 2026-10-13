@@ -45,9 +45,10 @@ test('Management configures dedicated and shared phase coverage with validation 
   );
   expect(season.status()).toBe(201);
   const phases = ((await season.json()) as { phases: { id: string }[] }).phases;
-  const selector = (label: string) => page.locator(`select[aria-label="${label}"]`).locator('..');
-  const choose = async (label: string, name: string) => {
-    const field = selector(label);
+  const selector = (label: string, index = 0) =>
+    page.locator(`select[aria-label="${label}"]`).nth(index).locator('..');
+  const choose = async (label: string, name: string, index = 0) => {
+    const field = selector(label, index);
     if (!(await field.locator('.ts-dropdown').isVisible())) {
       // Target the search input in a multi-select; its center can contain a pill's remove button.
       const multiple = await field.locator('select').getAttribute('multiple');
@@ -58,7 +59,7 @@ test('Management configures dedicated and shared phase coverage with validation 
   await page.goto(`/admin/organizations/${organization}/seasons/${seasonId}`);
   await page.locator(`a[href$="/phases/${phases[0]!.id}/coverage"]`).click();
   await expect(page).toHaveURL(new RegExp(`/phases/${phases[0]!.id}/coverage$`));
-  await page.locator('select[name="configuration[model]"]').selectOption('dedicated');
+  await expect(page.locator('select[name="configuration[model]"]')).toHaveCount(0);
   await page.getByRole('link', { name: 'Add staffing requirement', exact: true }).click();
   await expect(selector('Staffing shift name').locator('select')).toHaveValue('');
   await expect(selector('Staffing dedicated area').locator('select')).toHaveValue('');
@@ -104,7 +105,11 @@ test('Management configures dedicated and shared phase coverage with validation 
     .getByLabel('Reason for coverage change', { exact: false })
     .fill('Limited evening patrol');
   await page.getByRole('button', { name: 'Save phase coverage', exact: true }).click();
-  await expect(page.getByText(/coverage models cannot be mixed/).first()).toBeVisible();
+  await expect(
+    page
+      .getByText('Choose exactly one dedicated area or shared group for each staffing row.')
+      .first(),
+  ).toBeVisible();
   await expect(page.getByLabel('Shift local start', { exact: true })).toHaveValue('21:30');
   await expect(selector('Staffing shift name').locator('select')).toHaveValue('Evening');
   await expect(selector('Staffing dedicated area').locator('select')).toHaveValue('North');
@@ -120,7 +125,6 @@ test('Management configures dedicated and shared phase coverage with validation 
 
   const stale = await context.newPage();
   await stale.goto(page.url());
-  await page.locator('select[name="configuration[model]"]').selectOption('shared');
   await page.getByRole('link', { name: 'Add shared group', exact: true }).click();
   await page.getByLabel('Group name', { exact: true }).fill('Joint patrol');
   await choose('Group area names', 'North');
@@ -155,6 +159,11 @@ test('Management configures dedicated and shared phase coverage with validation 
   await expect(selector('Staffing dedicated area').locator('select')).toHaveValue('');
   await expect(selector('Staffing shared group').locator('select')).toHaveValue('Joint patrol');
   await members.locator('.item[data-value="East"] .remove').click();
+  // Keep the shared row and add dedicated staffing in the same phase and shift.
+  await page.getByRole('link', { name: 'Add staffing requirement', exact: true }).click();
+  await choose('Staffing shift name', 'Evening', 1);
+  await choose('Staffing dedicated area', 'South', 1);
+  await page.getByLabel('Required positions', { exact: true }).nth(1).fill('2');
   await page.getByRole('button', { name: 'Save phase coverage', exact: true }).click();
   await expect(page.locator('input[name="configuration[expected_revision]"]')).toHaveValue('2');
   await stale.getByLabel('Shift name', { exact: true }).fill('Keep this unsaved shift');
@@ -174,16 +183,38 @@ test('Management configures dedicated and shared phase coverage with validation 
   const saved = (await response.json()) as {
     model: string;
     groups: { area_names: string[] }[];
+    staffing: {
+      shift_name: string;
+      area_name: string | null;
+      group_name: string | null;
+      positions: number;
+    }[];
     revision: number;
   };
-  expect(saved.model).toBe('shared');
+  expect(saved.model).toBe('mixed');
+  expect(saved.staffing).toEqual(
+    expect.arrayContaining([
+      { shift_name: 'Evening', area_name: null, group_name: 'Joint patrol', positions: 1 },
+      { shift_name: 'Evening', area_name: 'South', group_name: null, positions: 2 },
+    ]),
+  );
+  expect(saved.staffing).toHaveLength(2);
   expect(saved.revision).toBe(2);
   expect(saved.groups[0]!.area_names).toEqual(['North', 'South']);
   await page.reload();
   await expect(members.locator('select')).toHaveValues(['North', 'South']);
-  await expect(selector('Staffing shift name').locator('select')).toHaveValue('Evening');
-  await expect(selector('Staffing dedicated area').locator('select')).toHaveValue('');
-  await expect(selector('Staffing shared group').locator('select')).toHaveValue('Joint patrol');
+  // Stored UUID ordering can reorder staffing rows; inspect targets without relying on order.
+  await expect(page.locator('select[aria-label="Staffing shift name"]')).toHaveCount(2);
+  expect(
+    await page
+      .locator('select[aria-label="Staffing dedicated area"]')
+      .evaluateAll((fields) => fields.map((field) => (field as HTMLSelectElement).value).sort()),
+  ).toEqual(['', 'South']);
+  expect(
+    await page
+      .locator('select[aria-label="Staffing shared group"]')
+      .evaluateAll((fields) => fields.map((field) => (field as HTMLSelectElement).value).sort()),
+  ).toEqual(['', 'Joint patrol']);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );

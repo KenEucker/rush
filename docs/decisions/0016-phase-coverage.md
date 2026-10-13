@@ -13,9 +13,11 @@ to this task; no fairness, employment or Ranger visibility policy is introduced.
 
 ## Model and invariants
 
-- Each phase has an optional coverage aggregate: one `dedicated` or `shared`
-  model and an integer revision. Missing configuration is explicitly null.
-  Separate phases may use different models. Configuration is replaced atomically.
+- Each phase has an optional coverage aggregate with an integer revision.
+  Missing configuration is explicitly null. Each staffing row is `dedicated`
+  or `shared`; both types can coexist in a phase and shift. Configuration is
+  replaced atomically. This supersedes the original single-model rule with
+  explicit owner approval on October 13, 2026 (R-03).
 - Phase-scoped UUID shift definitions have a name, local `HH:mm` start, and a
   positive integer elapsed duration in minutes. Neither three shifts nor eight
   hours is hardcoded. Area and shared-group identities are UUIDs. Group membership
@@ -24,14 +26,14 @@ to this task; no fairness, employment or Ranger visibility policy is introduced.
   the service resolves these to same-phase UUID foreign keys.
 - Dedicated staffing has one area and no group; shared staffing has one group
   and no individual area. A shared group contains a nonempty set of distinct
-  configured areas. Dedicated phases cannot contain shared groups. Switching
-  models requires a complete valid replacement; no implicit conversion occurs.
+  configured areas. Each row must have exactly one target. Groups can exist before
+  staffing is configured; no implicit conversion or staffing count is inferred.
 - One nonnegative integer count applies per shift/target pair. Zero explicitly
   requires no positions; omitted pairs are unconfigured, never inferred coverage.
   Empty staffing is allowed while configuring inputs. Future generation must
   inspect configuration completeness; this slice does not claim reliable coverage.
-- Composite foreign keys enforce phase ownership and the phase-wide staffing
-  model. PostgreSQL checks protect model choice, positive duration, valid start
+- Composite foreign keys enforce phase ownership. PostgreSQL checks protect
+  each staffing row's model choice, positive duration, valid start
   time, nonnegative counts and exclusive area/group targets. The shared service
   additionally validates group membership, unique names and input bounds.
 - Whole-aggregate saves retain supplied UUIDs, create new ones for new rows and
@@ -82,7 +84,25 @@ replaced or removed; the domain service still rejects unknown references. Failed
 saves retain selected arrays. No staffing rows or position counts are inferred.
 Area names still cannot contain commas under the existing domain contract.
 Staffing targets include explicit empty choices so managers can clear the other
-model's target when switching coverage models.
+target when changing a staffing row's coverage type. The phase-wide selector is removed.
+
+## Approved mixed-coverage migration
+
+The October 13, 2026 follow-up removes the stored phase-wide model and its composite
+staffing foreign key. Staffing still references the coverage aggregate by phase,
+and existing row type/target checks and phase-scoped references remain intact.
+The API retains `model` as a derived read-only summary (`dedicated`, `shared`,
+`mixed`, or null for no staffing); old write values are ignored. UUIDs, counts,
+revisions, group membership and historical audit/assignment snapshots are preserved.
+Assignment source context resolves the selected target rather than a phase model;
+an optional explicit target type disambiguates UUIDs shared by both collections.
+
+Run the new migration with the updated code. A downgrade refuses mixed staffing
+before changing any data; managers must first resolve it to a single type before
+rolling back. Do not discard staffing to force a downgrade. Configuration remains
+online-only with no Dexie/sync change. Generation and coverage-gap calculations
+remain RUSH-022–025; this follow-up does not implement or infer assignment credit
+across overlapping dedicated/group requirements.
 
 Orchid administration is online per Technical §7.4. No Dexie version, sync
 command, Workbox API cache, Pinia persistence or extra queue is added. Ranger

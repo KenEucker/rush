@@ -36,15 +36,17 @@ class PhaseCoverage
         $areas = DB::table('coverage_areas')->where('phase_id', $phase->id)->orderBy('name')->get();
         $groups = DB::table('coverage_groups')->where('phase_id', $phase->id)->orderBy('name')->get();
         $members = DB::table('coverage_group_areas')->where('phase_id', $phase->id)->get();
+        $staffing = DB::table('coverage_staffing')->where('phase_id', $phase->id)->orderBy('id')->get();
+        $models = $staffing->pluck('model')->unique();
 
         return [
             'phase_id' => $phase->id, 'season_revision' => Season::findOrFail($phase->season_id)->revision,
-            'revision' => $configuration?->revision, 'model' => $configuration?->model,
+            'revision' => $configuration?->revision, 'model' => $models->count() > 1 ? 'mixed' : $models->first(),
             'shifts' => $shifts->map(fn ($row) => collect($row)->only(['id', 'name', 'start_time', 'duration_minutes'])->all())->all(),
             'areas' => $areas->map(fn ($row) => ['id' => $row->id, 'name' => $row->name])->all(),
             'groups' => $groups->map(fn ($row) => ['id' => $row->id, 'name' => $row->name,
                 'area_names' => $areas->whereIn('id', $members->where('group_id', $row->id)->pluck('area_id'))->pluck('name')->all()])->all(),
-            'staffing' => DB::table('coverage_staffing')->where('phase_id', $phase->id)->orderBy('id')->get()->map(fn ($row) => [
+            'staffing' => $staffing->map(fn ($row) => [
                 'shift_name' => $shifts->firstWhere('id', $row->shift_id)->name,
                 'area_name' => $areas->firstWhere('id', $row->area_id)?->name,
                 'group_name' => $groups->firstWhere('id', $row->group_id)?->name,

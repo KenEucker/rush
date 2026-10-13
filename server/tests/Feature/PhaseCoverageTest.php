@@ -22,7 +22,7 @@ beforeEach(function () {
     $this->phase = $this->season->phases->first();
     $this->base = '/api/v1/organizations/'.$this->manager->organization_id;
     $this->url = $this->base.'/phases/'.$this->phase->id.'/coverage';
-    $this->input = ['expected_revision' => null, 'expected_season_revision' => 1, 'model' => 'dedicated', 'reason' => 'Initial coverage',
+    $this->input = ['expected_revision' => null, 'expected_season_revision' => 1, 'reason' => 'Initial coverage',
         'shifts' => [['name' => 'Evening', 'start_time' => '21:30', 'duration_minutes' => 390]],
         'areas' => [['name' => 'North'], ['name' => 'South']], 'groups' => [],
         'staffing' => [['shift_name' => 'Evening', 'area_name' => 'North', 'positions' => 2],
@@ -63,7 +63,7 @@ it('keeps different phase models and three configurable daily shifts independent
     $this->getJson($this->url)->assertJsonPath('model', 'dedicated')->assertJsonPath('revision', 1);
 });
 
-it('rejects invalid and mixed configuration without partial writes', function (string $field, mixed $value) {
+it('rejects invalid configuration without partial writes', function (string $field, mixed $value) {
     $this->actingAs($this->manager->user)->putJson($this->url, $this->input)->assertOk();
     $changed = [...$this->input, 'expected_revision' => 1];
     data_set($changed, $field, $value);
@@ -73,15 +73,14 @@ it('rejects invalid and mixed configuration without partial writes', function (s
     $this->assertDatabaseCount('coverage_staffing', 2);
 })->with([
     ['shifts.0.start_time', '24:00'], ['shifts.0.duration_minutes', 0], ['shifts.0.duration_minutes', 7.5],
-    ['shifts', []], ['areas', []], ['model', 'mixed'], ['reason', ''],
+    ['shifts', []], ['areas', []], ['reason', ''],
     ['areas.1.name', 'north'], ['staffing.0.positions', -1], ['staffing.0.positions', 1.5],
     ['staffing.0.shift_name', 'Missing'], ['staffing.0.area_name', 'Foreign area'],
     ['staffing.0.group_name', 'Mixed'], ['staffing.1.area_name', 'North'],
-    ['groups', [['name' => 'Mixed', 'area_names' => ['North']]]],
-    ['model', 'shared'], ['shifts.0.desirability', 'undesirable'],
+    ['staffing.0.area_name', null], ['shifts.0.desirability', 'undesirable'],
 ]);
 
-it('validates shared group members and rejects individual-area requirements in a shared phase', function () {
+it('validates shared group members even when staffing uses dedicated areas', function () {
     $shared = [...$this->input, 'model' => 'shared', 'groups' => [['name' => 'Joint', 'area_names' => ['North', 'South']]],
         'staffing' => [['shift_name' => 'Evening', 'group_name' => 'Joint', 'positions' => 2]]];
     $this->actingAs($this->manager->user);
@@ -89,11 +88,72 @@ it('validates shared group members and rejects individual-area requirements in a
         $bad = $shared;
         $bad['groups'][0]['area_names'] = $members;
         $this->putJson($this->url, $bad)->assertUnprocessable();
+        $this->putJson($this->url, [...$bad, 'staffing' => $this->input['staffing']])->assertUnprocessable();
     }
-    $this->putJson($this->url, [...$shared, 'staffing' => $this->input['staffing']])->assertUnprocessable();
     $this->assertDatabaseCount('phase_coverages', 0);
     $this->assertDatabaseCount('shift_definitions', 0);
     $this->putJson($this->url, $shared)->assertOk();
+});
+
+it('saves mixed staffing through Orchid and API while retaining identities counts and audit history', function () {
+    $this->actingAs($this->manager->user);
+    $saved = $this->putJson($this->url, $this->input)->assertOk()->json();
+    $mixed = [...$saved, 'expected_revision' => 1, 'expected_season_revision' => 1, 'reason' => 'Add shared patrol',
+        'groups' => [['name' => 'Joint', 'area_names' => ['North', 'South']]],
+        'staffing' => [...$saved['staffing'], ['shift_name' => 'Evening', 'group_name' => 'Joint', 'positions' => 1]]];
+    $admin = '/admin/organizations/'.$this->manager->organization_id.'/phases/'.$this->phase->id.'/coverage';
+    $this->post($admin.'/save', ['configuration' => $mixed])->assertRedirect($admin)->assertSessionHasNoErrors();
+    $snapshot = $this->getJson($this->url)->assertOk()->assertJsonPath('model', 'mixed')->assertJsonPath('revision', 2)
+        ->assertJsonPath('shifts.0.id', $saved['shifts'][0]['id'])->assertJsonPath('areas', $saved['areas'])->assertJsonCount(3, 'staffing')->json();
+    expect(collect($snapshot['staffing'])->pluck('positions')->sort()->values()->all())->toBe([0, 1, 2]);
+    $audit = DB::table('phase_coverage_changes')->where('revision', 2)->first();
+    expect(json_decode($audit->before, true)['model'])->toBe('dedicated')
+        ->and(json_decode($audit->after, true)['model'])->toBe('mixed');
+    $this->putJson($this->url, $mixed)->assertConflict();
+    // Definitions are allowed before their staffing counts are configured.
+    $this->putJson($this->url, [...$mixed, 'expected_revision' => 2, 'staffing' => []])->assertOk()
+        ->assertJsonPath('model', null)->assertJsonCount(1, 'groups');
+});
+
+it('rejects both targets neither target unknown references and duplicate shared rows atomically', function () {
+    $this->actingAs($this->manager->user);
+    $input = [...$this->input, 'groups' => [['name' => 'Joint', 'area_names' => ['South']]],
+        'staffing' => [...$this->input['staffing'], ['shift_name' => 'Evening', 'group_name' => 'Joint', 'positions' => 1]]];
+    $this->putJson($this->url, $input)->assertOk();
+    foreach ([['area_name' => 'North', 'group_name' => 'Joint'], ['area_name' => null, 'group_name' => null],
+        ['group_name' => 'Foreign'], ['group_name' => 'Joint', 'shift_name' => 'Foreign'], ['group_name' => 'Joint']] as $target) {
+        $bad = [...$input, 'expected_revision' => 1];
+        $bad['staffing'][] = [...['shift_name' => 'Evening', 'positions' => 3], ...$target];
+        $this->putJson($this->url, $bad)->assertUnprocessable()->assertJsonValidationErrors('staffing.3');
+        $this->getJson($this->url)->assertJsonPath('revision', 1)->assertJsonPath('model', 'mixed');
+        $this->assertDatabaseCount('coverage_staffing', 3);
+        $this->assertDatabaseCount('phase_coverage_changes', 1);
+    }
+});
+
+it('resolves each assignment target in a mixed phase and preserves its context after reconfiguration', function () {
+    $this->actingAs($this->manager->user);
+    // UUIDs belong to separate collections; explicit model disambiguates a rare collision.
+    $targetId = (string) Str::uuid();
+    $input = [...$this->input, 'areas' => [['id' => $targetId, 'name' => 'North'], ['name' => 'South']],
+        'groups' => [['id' => $targetId, 'name' => 'Joint', 'area_names' => ['North', 'South']]],
+        'staffing' => [...$this->input['staffing'], ['shift_name' => 'Evening', 'group_name' => 'Joint', 'positions' => 1]]];
+    $saved = $this->putJson($this->url, $input)->assertOk()->json();
+    $ranger = OrganizationMembership::factory()->create(['organization_id' => $this->manager->organization_id]);
+    $assignment = ['membership_id' => $ranger->id, 'expected_revision' => null, 'reason' => 'Mixed coverage',
+        'starts_at' => '2026-03-09T04:30:00Z', 'ends_at' => '2026-03-09T07:00:00Z',
+        'shift' => ['phase_id' => $this->phase->id, 'shift_id' => $saved['shifts'][0]['id'], 'target_id' => $targetId,
+            'date' => '2026-03-08', 'expected_coverage_revision' => 1, 'expected_season_revision' => 1]];
+    $this->putJson($this->base.'/official-assignments/'.Str::uuid(), $assignment)->assertUnprocessable()->assertJsonValidationErrors('shift.model');
+    foreach (['dedicated' => ['North'], 'shared' => ['North', 'South']] as $model => $areas) {
+        $url = $this->base.'/official-assignments/'.Str::uuid();
+        $this->putJson($url, [...$assignment, 'shift' => [...$assignment['shift'], 'model' => $model]])->assertOk()
+            ->assertJsonPath('shift_context.model', $model)->assertJsonPath('shift_context.area_names', $areas);
+    }
+    $this->putJson($this->url, [...$this->input, 'expected_revision' => 1])->assertOk();
+    unset($assignment['shift']);
+    $this->putJson($url, [...$assignment, 'expected_revision' => 1])->assertOk()
+        ->assertJsonPath('shift_context.model', 'shared')->assertJsonPath('shift_context.area_names', ['North', 'South']);
 });
 
 it('checks current management access on API and Orchid reads writes and direct service calls', function () {
@@ -222,6 +282,7 @@ it('revalidates assignment configuration revisions dates targets and partial bou
         'shift' => ['phase_id' => $this->phase->id, 'shift_id' => $saved['shifts'][0]['id'], 'target_id' => $saved['areas'][0]['id'],
             'date' => '2026-03-08', 'expected_coverage_revision' => 1, 'expected_season_revision' => 1]];
     foreach ([['shift.expected_coverage_revision', 2, 409], ['shift.expected_season_revision', 2, 409],
+        ['shift.model', 'shared', 422], ['shift.model', 'mixed', 422],
         ['shift.shift_id', (string) Str::uuid(), 422], ['shift.target_id', (string) Str::uuid(), 422],
         ['shift.date', '2026-06-01', 422], ['starts_at', '2026-03-09T04:29:00Z', 422],
         ['ends_at', '2026-03-09T11:01:00Z', 422], ['shift', null, 422]] as [$field, $value, $status]) {

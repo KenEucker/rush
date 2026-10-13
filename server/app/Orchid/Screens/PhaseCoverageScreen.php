@@ -27,7 +27,7 @@ class PhaseCoverageScreen extends Screen
 
     public function description(): ?string
     {
-        return 'Online administration · One coverage model for this phase.';
+        return 'Online administration · Dedicated areas and shared groups can be combined in this phase.';
     }
 
     public function query(Organization $organization, string $phase, PhaseCoverage $coverage): iterable
@@ -49,8 +49,6 @@ class PhaseCoverageScreen extends Screen
         return [Layout::view('admin.phase-coverage'), Layout::rows([
             Input::make('configuration.expected_revision')->type('hidden'),
             Input::make('configuration.expected_season_revision')->type('hidden'),
-            Select::make('configuration.model')->title('Coverage model')->options(['dedicated' => 'Dedicated areas', 'shared' => 'Shared areas'])
-                ->empty('Choose one model')->required()->help('Dedicated: a count for each area and shift. Shared: a count for the whole area group and shift. Switching models requires replacing the staffing rows.'),
             Matrix::make('configuration.shifts')->title('Shift definitions')->columns(['Shift name' => 'name', 'Local start' => 'start_time', 'Duration (minutes)' => 'duration_minutes', '' => 'id'])
                 ->fields(['name' => Input::make()->set('aria-label', 'Shift name')->required()->maxlength(120),
                     'start_time' => Input::make()->type('time')->set('aria-label', 'Shift local start')->required(),
@@ -63,13 +61,13 @@ class PhaseCoverageScreen extends Screen
             Matrix::make('configuration.groups')->title('Shared area groups')->columns(['Group name' => 'name', 'Area names' => 'area_names', '' => 'id'])
                 ->fields(['name' => Input::make()->set('aria-label', 'Group name')->required()->maxlength(120),
                     'area_names' => $this->referenceSelect('Group area names')->multiple()->placeholder('Choose areas')->required(), 'id' => Input::make()->type('hidden')])
-                ->maxRows(100)->addRowLabel('Add shared group')->help('Shared model only. Choose coverage areas defined above; remove a selected area with its × button. Remove groups when switching to dedicated coverage.'),
+                ->maxRows(100)->addRowLabel('Add shared group')->help('Choose coverage areas defined above; remove a selected area with its × button. Shared groups can coexist with dedicated staffing requirements.'),
             Matrix::make('configuration.staffing')->title('Staffing requirements')->columns(['Shift name' => 'shift_name', 'Dedicated area' => 'area_name', 'Shared group' => 'group_name', 'Positions' => 'positions'])
                 ->fields(['shift_name' => $this->referenceSelect('Staffing shift name')->empty('Choose a shift')->required(),
                     'area_name' => $this->referenceSelect('Staffing dedicated area')->empty('No dedicated area'),
                     'group_name' => $this->referenceSelect('Staffing shared group')->empty('No shared group'),
                     'positions' => Input::make()->type('number')->min(0)->step(1)->set('aria-label', 'Required positions')->required()])
-                ->maxRows(10000)->addRowLabel('Add staffing requirement')->help('Choose a shift and only the area or group for the chosen model from the definitions above. Leave the other target empty. Zero means no required positions; an omitted pair is unconfigured, not inferred coverage. Selections marked “not defined” must be replaced or removed after renaming or removing a definition.'),
+                ->maxRows(10000)->addRowLabel('Add staffing requirement')->help('For each row choose a shift and exactly one dedicated area or shared group from the definitions above. Leave the other target empty. Both types can be used in this phase. Zero means no required positions; an omitted pair is unconfigured, not inferred coverage. Selections marked “not defined” must be replaced or removed after renaming or removing a definition.'),
             Input::make('configuration.reason')->title('Reason for coverage change')->required()->maxlength(500),
         ])];
     }

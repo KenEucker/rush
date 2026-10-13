@@ -19,7 +19,7 @@ The initial version is designed for a team of roughly **5–15 Rangers**, with t
 ### Scheduling and coverage
 
 - **Season-based planning:** Define operational phases with different shift patterns, staffing requirements, and coverage policies.
-- **Flexible coverage models:** Schedule dedicated areas or shared coverage groups, depending on the phase.
+- **Flexible coverage models:** Combine dedicated areas and shared coverage groups within a phase, with one target per staffing requirement.
 - **Assisted schedule generation:** Prepare editable schedules based on staffing needs, availability, preferences, hour limits, and fairness history.
 - **Fairness over time:** Prioritize balance within each week, taking season-long patterns and recurring undesirable shifts into account.
 - **Visible staffing gaps:** Identify unfilled positions, flag conflicts, and suggest possible replacements without hiding shortages.

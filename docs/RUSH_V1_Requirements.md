@@ -26,12 +26,12 @@ The application should:
 
 **R-02 Configurable shifts.** Management defines shift start times and durations. The recent norm is three eight-hour shifts daily, but the app must not hardcode that pattern. Schedule generation assigns **whole shifts** by default; management may manually create partial assignments.
 
-**R-03 One coverage model per phase.** Management chooses one model for each phase:
+**R-03 Coverage targets per staffing row.** Management can combine these coverage types within a phase (owner-approved October 13, 2026):
 
 - **Dedicated areas:** Individual staffing requirements per coverage area and shift.
 - **Shared areas:** Rangers on one shift jointly cover a defined set of areas, with a group-level staffing requirement.
 
-A phase cannot mix these models. A shift communicates a Ranger's scheduled area or area group; granular movement tracking is outside V1.
+Each staffing row selects one shift and exactly one dedicated area or shared group from that phase. Dedicated and shared rows may coexist for the same shift. A row cannot select both targets or neither. A shift communicates a Ranger's scheduled area or area group; granular movement tracking is outside V1.
 
 **R-04 Coverage gaps.** The system compares required positions with Ranger assignments. Draft and published gaps remain visible. Published gaps are understood as management's responsibility, but are not automatically represented as confirmed coverage.
 
@@ -130,7 +130,7 @@ A phase cannot mix these models. A shift communicates a Ranger's scheduled area 
 ## 10. Acceptance scenarios
 
 1. **Low-staff phase:** Management configures limited coverage, generates a draft with gaps, reviews suggestions, and publishes with clearly identified management responsibility.
-2. **24/7 phase:** The engine fills three configurable daily shifts using a phase-wide dedicated or shared-area model and displays shortfalls.
+2. **24/7 phase:** The engine fills three configurable daily shifts using dedicated-area and/or shared-group staffing requirements within the same phase and displays shortfalls. Each staffing row has exactly one coverage target.
 3. **Fairness:** A Ranger who worked successive Monday evenings is considered for a free Monday evening in later weeks, subject to weekly coverage and constraints.
 4. **Unavailable Ranger:** New unavailability after draft release is acknowledged, conflicts are flagged, publication occurs on time, and management can select a suggested replacement.
 5. **Shift change:** Rangers agree to a swap or one-way transfer; the assignment changes only after management approval.
