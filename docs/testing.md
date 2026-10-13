@@ -58,6 +58,53 @@ storage/logs/pest.xml`.
 
 ## Full-stack browser tests
 
+### Live Docker development (RUSH-002 follow-up)
+
+CI's separate Development job runs `npm run docker:dev:test` against a seeded
+`rush-dev-test` project using `compose.yaml` plus `compose.dev.yaml`. It verifies
+PHP and Blade edits, Vue HMR over Caddy's WebSocket, same-origin login/Orchid/assets,
+and development service-worker retirement without clearing IndexedDB. Container
+IDs and restart counts must remain unchanged across the edits. The script creates
+uniquely named temporary probe files and removes them in `finally`; it never edits
+tracked application files. Run it against a disposable stack before enabling
+development mode on another stack that mounts the same checkout.
+
+To reproduce locally in PowerShell (Docker Compose 2.24.4+), use a fresh terminal
+and set disposable environment values before starting the fixture:
+
+```powershell
+$env:APP_KEY = 'base64:4JgDPkNG6PpRLCpJvf4n3uGRrjkk+ySOGFbqVDJcX8k='
+$env:APP_URL = 'http://localhost:9188'
+$env:RUSH_SITE_ADDRESS = 'http://:80'
+$env:RUSH_HTTP_PORT = '9188'
+$env:RUSH_HTTPS_PORT = '9448'
+$env:SESSION_SECURE_COOKIE = 'false'
+$env:POSTGRES_DB = 'rush_dev_test'
+$env:POSTGRES_USER = 'rush_dev_test'
+$env:POSTGRES_PASSWORD = 'disposable-dev-only'
+docker compose -p rush-dev-test -f compose.yaml -f compose.dev.yaml up -d --build --wait --wait-timeout 180
+docker compose -p rush-dev-test -f compose.yaml -f compose.dev.yaml exec -T --user www-data server php artisan migrate --seed --force
+npm run docker:dev:test
+docker compose -p rush-dev-test -f compose.yaml -f compose.dev.yaml down --volumes
+```
+
+Always clean up the disposable project, including after a failed check, and close
+that terminal before working with the normal stack so test environment overrides
+do not carry over. On Unix, export the same variables. The test refuses project
+names outside `rush-dev-test` / `rush-dev-test-*` and non-loopback browser origins.
+For parallel fixtures override `RUSH_DEV_TEST_PROJECT` and `RUSH_DEV_TEST_URL` to
+match the chosen project/ports. This is a development smoke test, not offline PWA
+acceptance; continue using the production fixture below for offline evidence.
+
+Local verification (2026-10-13): all development smoke checks passed, including
+preserved IndexedDB and unchanged PHP/Client container IDs and restart counts.
+Client lint, type checking and the production PWA build passed; root convention
+tests passed (8). Both Compose configurations validated. After enabling the
+normal local development stack, an HTTPS browser smoke check passed for sign-in,
+Laravel `/up` and the WSS HMR connection; the PostgreSQL container ID was preserved.
+
+### Production-built PWA fixture
+
 The standalone fixture below never uses `compose.yaml` or its production volumes.
 It builds the production PWA and Laravel images, serves Caddy on loopback port
 9187, and creates temporary PostgreSQL storage. Do not reuse it for real data.

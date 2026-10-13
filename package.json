@@ -4,6 +4,12 @@
   "private": true,
   "description": "Ranger Unified Scheduling & Hours monorepo",
   "scripts": {
+    "docker:dev": "docker compose -f compose.yaml -f compose.dev.yaml",
+    "docker:dev:up": "docker compose -f compose.yaml -f compose.dev.yaml up -d --build --wait --wait-timeout 180",
+    "docker:dev:down": "docker compose -f compose.yaml -f compose.dev.yaml down",
+    "docker:dev:logs": "docker compose -f compose.yaml -f compose.dev.yaml logs -f",
+    "docker:dev:artisan": "docker compose -f compose.yaml -f compose.dev.yaml exec -T --user www-data server php artisan",
+    "docker:dev:test": "node scripts/test-docker-development.mjs",
     "artisan": "php server/artisan",
     "docker:artisan": "docker compose exec -T --user www-data server php artisan",
     "server:migrate": "php server/artisan migrate",

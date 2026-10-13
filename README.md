@@ -200,6 +200,58 @@ docker compose up -d --build --no-deps server
 
 ### Authentication development
 
+For Docker development with live source updates, use Docker Compose 2.24.4 or
+newer and the same root `.env` as your existing stack:
+
+```sh
+npm run docker:dev:up
+```
+
+This performs a one-time recreation of the web containers and starts an internal
+Quasar development server. It reuses the existing PostgreSQL, Server storage and
+Caddy TLS volumes. It does not migrate, seed or reset the database. Open the
+`APP_URL` from your root `.env` (normally `https://localhost`). The development
+override binds Caddy to loopback; PHP, Quasar and PostgreSQL have no published ports.
+
+- Laravel/Orchid edits in `server/app`, `config`, `database`, `resources`, `routes`,
+  `public` and the bootstrap entry files appear on the next browser refresh.
+  PHP checks source timestamps and startup clears compiled config/routes/views.
+  Source mounts are read-only inside PHP; use your host editor or local Artisan
+  for code generation, and container Artisan for database/cache operations.
+- Vue/TypeScript/CSS edits update through Quasar HMR at the same origin. Polling
+  supports Docker Desktop file sharing. Container dependencies and `.quasar`
+  output use separate named volumes, leaving host `node_modules` untouched.
+- A previously installed production service worker is retired when the browser
+  checks `/sw.js` for updates. If an old shell is still displayed, close/reopen
+  the tab or use DevTools → Application → Service Workers → Update. IndexedDB
+  and pending work are preserved; do not clear site data to switch modes.
+- This runs the development SPA. Offline acceptance tests must continue to use
+  the production-built PWA fixture documented in [testing](docs/testing.md).
+
+Routine edits require no restart or rebuild. Dependency, environment, PHP INI
+or container configuration changes still require an explicit update:
+
+```sh
+npm run docker:dev:logs -- --tail 50 server client
+npm run docker:dev:artisan -- migrate
+npm run docker:dev -- restart client                 # reinstall changed Node lockfile
+npm run docker:dev:up                                # rebuild PHP dependencies/configuration
+```
+
+Use the `docker:dev:*` helpers while working in this mode. `docker:dev:down` stops
+the development stack without deleting volumes. To return to built images:
+
+```sh
+npm run docker:dev:down
+npm run docker:up -- --build
+```
+
+For custom ports/hostnames, `APP_URL` must match the public browser origin so HMR
+connects through Caddy. For local HTTP only, set `RUSH_SITE_ADDRESS=http://:80`,
+`APP_URL=http://localhost:8080`, `RUSH_HTTP_PORT=8080` and
+`SESSION_SECURE_COOKIE=false` in the root `.env`. Production Compose behavior is
+unchanged; the override enables local debug output and must not be deployed.
+
 After migrations, use `php server/artisan db:seed` only in a local development
 database to create the demo fixture. Sign in at `/sign-in` with
 `casey.ranger@example.com` (Ranger) or `avery.management@example.com` (Management),

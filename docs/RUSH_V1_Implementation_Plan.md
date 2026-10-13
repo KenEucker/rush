@@ -80,6 +80,16 @@ A task is done only when its stated outcome works through the relevant UI/API, p
 
 **Milestone demonstration:** Start from a clean checkout, authenticate as each role, inspect authorization differences, and open the Ranger Client and Orchid through the intended routes.
 
+### RUSH-002 development evidence
+
+RUSH-002 development follow-up: `compose.dev.yaml` adds opt-in, loopback-only
+Caddy routing to an internal Quasar HMR server and mounted Laravel source with
+PHP timestamp validation. Production routing/images and durable volumes retain
+their existing behavior. `npm run docker:dev:test` verifies live PHP/Blade and
+Vue updates without container recreation, same-origin sessions/Orchid, and
+service-worker retirement preserving IndexedDB. This supports R-01–R-38 through
+Technical §4; production-built PWA tests remain the offline acceptance evidence.
+
 ### RUSH-004 implementation evidence
 
 RUSH-001–003 are prerequisites. RUSH-004 implements Technical §8 (cross-cutting
