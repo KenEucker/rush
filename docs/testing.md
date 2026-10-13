@@ -121,6 +121,20 @@ tests passed (8). Both Compose configurations validated. After enabling the
 normal local development stack, an HTTPS browser smoke check passed for sign-in,
 Laravel `/up` and the WSS HMR connection; the PostgreSQL container ID was preserved.
 
+Development CI regression (2026-10-13, PR #19): run `38449136859` failed while
+reading worker registrations because navigation destroyed the evaluation context.
+The signed-in `/sign-in` page could redirect independently of the worker, and
+`framenavigated` did not guarantee the replacement document had loaded. The smoke
+test now uses a same-origin probe document, writes IndexedDB before activation,
+and triggers registration through a button while awaiting the exact document's
+completed reload. It asserts a second document load, worker unregistration and
+preserved IndexedDB without catching or suppressing browser errors. The actual
+development worker, Caddy routing and application behavior are unchanged.
+Verification: `npm run docker:dev:test` passed three consecutive runs against an
+isolated development stack; `node --check scripts/test-docker-development.mjs`
+passed and `npm run conventions:test` passed all eight tests. The unchanged test
+also passed one local comparison run; the original failure was observed in CI.
+
 ### Production-built PWA fixture
 
 The standalone fixture below never uses `compose.yaml` or its production volumes.

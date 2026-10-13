@@ -78,8 +78,18 @@ try {
 
   // Emulate an existing production registration; switching to development must
   // retire it without deleting pending operational data from IndexedDB.
-  await page.goto('/sign-in');
-  await Promise.all([page.waitForEvent('framenavigated'), page.evaluate(async () => {
+  // Use a stable document: a signed-in /sign-in visit redirects independently
+  // of worker activation. Only the worker may navigate this probe page.
+  const workerProbeUrl = new URL(`/${id}`, origin).href;
+  let workerProbeLoads = 0;
+  await page.route(workerProbeUrl, (route) => route.fulfill({
+    contentType: 'text/html',
+    body: `<html data-load="${++workerProbeLoads}"><body>
+      <button onclick="navigator.serviceWorker.register('/sw.js')">Retire worker</button>
+    </body></html>`,
+  }));
+  await page.goto(workerProbeUrl);
+  await page.evaluate(async () => {
     await new Promise((resolve, reject) => {
       const request = indexedDB.open('rush-dev-preservation-proof', 1);
       request.onupgradeneeded = () => request.result.createObjectStore('pending');
@@ -91,8 +101,14 @@ try {
         tx.oncomplete = () => { db.close(); resolve(); };
       };
     });
-    await navigator.serviceWorker.register('/sw.js');
-  })]);
+  });
+  // Wait for the replacement document to load, not just a frame navigation
+  // event. Do not keep an evaluate promise alive across worker-driven reload.
+  await Promise.all([
+    page.waitForNavigation({ url: workerProbeUrl, waitUntil: 'load' }),
+    page.getByRole('button', { name: 'Retire worker', exact: true }).click(),
+  ]);
+  await expect(page.locator('html')).toHaveAttribute('data-load', '2');
   await expect.poll(async () => page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0);
   await expect.poll(async () => page.evaluate(() => new Promise((resolve, reject) => {
     const request = indexedDB.open('rush-dev-preservation-proof', 1);
