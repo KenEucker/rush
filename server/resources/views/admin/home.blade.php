@@ -4,6 +4,7 @@
     <ul>
         @foreach($organizations as $organization)
             <li><a href="{{ route('platform.seasons', [$organization->id, 'new']) }}">Seasons and phases — {{ $organization->name }}</a></li>
+            <li><a href="{{ route('platform.unavailability', [$organization->id, 'new']) }}">Unavailability notices — {{ $organization->name }} ({{ $organization->unavailability_notice_count }} need acknowledgment)</a></li>
         @endforeach
     </ul>
     <a href="/">Return to RUSH</a>

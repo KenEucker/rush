@@ -17,6 +17,7 @@ export function useAvailability() {
       operationId?: string;
       serverRange?: string;
       assignment_conflicts?: AssignmentConflict[];
+      acknowledged_at?: string | null;
     }[]
   >([]);
   const error = ref('');

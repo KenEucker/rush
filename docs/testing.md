@@ -1,5 +1,23 @@
 # Testing RUSH
 
+## Unavailability review (RUSH-018)
+
+`php vendor/bin/pest tests/Feature/ManageUnavailabilityTest.php
+tests/Feature/UnavailabilityConcurrencyTest.php --compact` from `server/`
+covers scoped Management creation/editing, revision-specific acknowledgment,
+audit rollback and independent PostgreSQL writers. Existing `UnavailabilityTest`
+and `AssignmentConflictTest` cover Ranger sync and overlap clearing. The
+concurrency cases require a disposable PostgreSQL database and skip on SQLite.
+
+Client `npm run test:unit` covers acknowledgment/coverage projection persistence
+at unchanged revisions, reopen and subsequent edit resets. Against the production
+fixture below, `npx playwright test --config playwright.integration.config.ts
+unavailability-management.spec.ts` verifies desktop/mobile Management forms,
+offline range entry/reload, acknowledged snapshots offline, stale input and a
+competing Management edit while Ranger intent remains queued. It writes the
+RUSH-018 screenshots. The full E2E suite retains the offline browser-restart and
+official-assignment conflict gate. See [evidence](evidence/RUSH-018/README.md).
+
 ## Seasons and calendar policy (RUSH-015)
 
 `composer --working-dir=server test -- --filter=Season --compact` covers scoped

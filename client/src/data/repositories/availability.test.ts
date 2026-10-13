@@ -294,6 +294,64 @@ it('retains only a scope locator in the offline workspace directory', async () =
   expect(await offlineWorkspace.get()).toBeUndefined();
 });
 
+it('persists same-revision acknowledgments and coverage warnings through reopen and resets them on edits', async () => {
+  let storage = await open();
+  const id = crypto.randomUUID();
+  const base = { ...input, id, organization_id: scope.organizationId, revision: 1 };
+  const acknowledged_at = '2026-10-13T12:00:00Z';
+  const assignment_conflicts = [
+    {
+      id: crypto.randomUUID(),
+      revision: 1,
+      starts_at: input.starts_at,
+      ends_at: input.ends_at,
+      affected_coverage: {
+        starts_at: input.starts_at,
+        ends_at: input.ends_at,
+        target_name: 'North',
+      },
+    },
+  ];
+  for (const [index, value] of [
+    { ...base, acknowledged_at: null, assignment_conflicts },
+    { ...base, acknowledged_at, assignment_conflicts },
+    { ...base, revision: 2, acknowledged_at: null, assignment_conflicts: [] },
+  ].entries()) {
+    await storage.sync.applyPage(
+      index ? String(index) : null,
+      {
+        changes: [
+          {
+            sequence: index + 1,
+            record_type: 'unavailability',
+            record_id: id,
+            value: parseUnavailability(value, scope.organizationId, id),
+          },
+        ],
+        checkpoint: String(index + 1),
+        has_more: false,
+      },
+      'now',
+    );
+    storage.close();
+    storage = await open();
+    expect((await storage.availability.list())[0]?.value).toEqual(value);
+  }
+  for (const invalid of [
+    { ...base, acknowledged_at: 'yesterday' },
+    {
+      ...base,
+      assignment_conflicts: [
+        {
+          ...assignment_conflicts[0],
+          affected_coverage: { starts_at: input.ends_at, ends_at: input.starts_at, target_name: 2 },
+        },
+      ],
+    },
+  ])
+    expect(() => parseUnavailability(invalid, scope.organizationId, id)).toThrow();
+});
+
 it('applies availability tombstones and clears confirmed ranges on checkpoint reset while preserving intent', async () => {
   const storage = await open();
   const operation = await stageAvailability(storage, input);

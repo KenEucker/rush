@@ -125,13 +125,13 @@ Common aliases are available in the root `package.json`:
 
 | Purpose | npm scripts |
 | --- | --- |
-| Database | `server:migrate`, `server:migrate:status`, `server:migrate:rollback`, `server:migrate:fresh`, `server:seed` |
-| Clear caches | `server:cache:clear`, `server:config:clear`, `server:route:clear`, `server:view:clear`, `server:optimize:clear` |
-| Build caches | `server:optimize`, `server:config:cache`, `server:route:cache`, `server:view:cache` |
+| Database | `server:migrate`, `server:migrate:status`, `server:migrate:rollback`, `server:migrate:fresh`, `server:migrate:refresh`, `server:migrate:reset`, `server:seed` |
+| Clear caches | `server:cache:clear`, `server:config:clear`, `server:route:clear`, `server:view:clear`, `server:event:clear`, `server:optimize:clear` |
+| Build caches | `server:optimize`, `server:config:cache`, `server:route:cache`, `server:view:cache`, `server:event:cache` |
 | Setup | `server:key:generate`, `server:storage:link` |
 | Queues | `server:queue:work`, `server:queue:restart`, `server:queue:failed`, `server:queue:retry` |
 | Scheduler | `server:schedule:list`, `server:schedule:run`, `server:schedule:work` |
-| Operations | `server:route:list`, `server:up`, `server:down` |
+| Operations | `server:about`, `server:route:list`, `server:event:list`, `server:up`, `server:down` |
 
 Pass extra arguments after `--`, such as `npm run server:migrate -- --pretend`
 or `npm run server:queue:retry -- <job-id>`. These run locally, using `server/.env`.
@@ -164,7 +164,8 @@ container receives `APP_KEY` from the root environment: use
 `npm run docker:server:key:generate -- --show` to generate a value, store it in
 the deployment's root `.env`, and recreate the Server container to apply it.
 
-No alias adds `--force`. `migrate:fresh` drops all tables, rollback removes the
+No alias adds `--force`. `migrate:fresh` drops all tables, `migrate:reset` rolls back
+all migrations, `migrate:refresh` rolls back and reruns them, rollback removes the
 last migration batch, and key generation changes encryption keys: use those
 deliberately against the intended environment. `server:optimize:clear` includes
 the application cache; the individual clear commands are available when needed.
