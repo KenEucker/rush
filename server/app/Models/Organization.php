@@ -36,4 +36,12 @@ class Organization extends Model
     {
         return $this->hasMany(MemberProfile::class);
     }
+
+    /**
+     * @return HasMany<Season>
+     */
+    public function seasons(): HasMany
+    {
+        return $this->hasMany(Season::class);
+    }
 }

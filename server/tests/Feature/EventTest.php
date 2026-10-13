@@ -31,6 +31,29 @@ beforeEach(function () {
         'attendance_membership_ids' => [$this->rangers[0]->id], 'reason' => 'One-off meeting'];
 });
 
+it('links event management from the management home only for authorized organizations', function () {
+    $hiddenOrganizations = [];
+    foreach ([['role' => 'ranger'], ['role' => 'management', 'is_active' => false]] as $attributes) {
+        $membership = OrganizationMembership::factory()->create(['user_id' => $this->manager->user_id, ...$attributes]);
+        $hiddenOrganizations[] = $membership->organization->name;
+    }
+    $response = $this->actingAs($this->manager->user)->get('/admin/main')->assertOk()
+        ->assertSee('Events and attendance')
+        ->assertSee(route('platform.events', [$this->manager->organization_id, $this->season->id, 'new']), false);
+    foreach ($hiddenOrganizations as $name) {
+        $response->assertDontSee($name);
+    }
+    $this->actingAs($this->rangers[0]->user)->get('/admin/main')->assertForbidden();
+});
+
+it('guides managers without a season to create one before configuring events', function () {
+    $manager = OrganizationMembership::factory()->create(['role' => 'management']);
+    $this->actingAs($manager->user)->get('/admin/main')->assertOk()
+        ->assertSee('Create a season to configure events')
+        ->assertSee(route('platform.seasons', [$manager->organization_id, 'new']), false)
+        ->assertDontSee(route('platform.events', [$this->manager->organization_id, $this->season->id, 'new']), false);
+});
+
 it('creates one dated paid event with stable attendance identities and actor-attributed history', function () {
     $this->actingAs($this->manager->user)->putJson($this->url, $this->input)->assertCreated()
         ->assertJsonPath('starts_at', '2026-10-13T01:00:00Z')->assertJsonPath('revision', 1)

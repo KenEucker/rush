@@ -18,7 +18,8 @@ class PlatformScreen extends Screen
     public function query(): iterable
     {
         return ['organizations' => Organization::query()->whereHas('memberships', fn ($query) => $query
-            ->where('user_id', auth()->id())->where('is_active', true)->where('role', 'management'))->orderBy('name')->get()
+            ->where('user_id', auth()->id())->where('is_active', true)->where('role', 'management'))
+            ->with(['seasons' => fn ($query) => $query->orderByDesc('starts_on')->orderBy('name')])->orderBy('name')->get()
             ->each(function ($organization) {
                 $organization->unavailability_notice_count = Unavailability::query()->where('organization_id', $organization->id)
                     ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('unavailability_acknowledgments')

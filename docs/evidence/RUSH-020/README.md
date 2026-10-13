@@ -18,6 +18,10 @@ ordinary shift/coverage records. Paid attendance exposes elapsed source interval
 split by local week/phase for later scheduling and timesheet integration.
 No recurrence, pay calculation, publication, or offline event administration.
 
+Event management is reachable from the Management home under **Events and
+attendance**, with a sidebar shortcut and direct links for each authorized
+organization's seasons. Managers without a season see a create-season link.
+
 UUID event/attendance identities, same-tenant foreign keys, revision/season
 checks, Management policies, transactional before/after audit, and retained form
 input protect changes. Attendance identities remain after removal/reassignment.
@@ -77,6 +81,17 @@ Seeded fixture accounts only; images were visually reviewed.
 - [Mobile event](events-mobile.png)
 - [Desktop retained conflict](events-conflict-desktop.png)
 - [Mobile retained conflict](events-conflict-mobile.png)
+- [Desktop event navigation](events-navigation-desktop.png)
+- [Mobile event navigation](events-navigation-mobile.png)
+
+Navigation follow-up: `php vendor/bin/pest tests/Feature/EventTest.php --compact`
+on SQLite passed **33 tests, 195 assertions**, with 5 PostgreSQL-only cases
+skipped. `php vendor/bin/pint --test` passed. The updated
+`npm run client:test:e2e -- events.spec.ts` passed **2 desktop/mobile tests**
+starting from the Management home, with the production-PWA fixture rebuilt,
+migrated and seeded. Navigation screenshots were visually reviewed.
+The local development PHP container was restarted to invalidate opcode caching;
+no development data was changed.
 
 ## Migration and remaining gates
 

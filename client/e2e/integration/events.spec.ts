@@ -51,7 +51,15 @@ test('Management configures a one-off paid meeting, reviews staffing and retains
       })
     ).status(),
   ).toBe(201);
-  await page.goto(`/admin/organizations/${organization}/seasons/${season}`);
+  await page.goto('/admin/main');
+  await expect(
+    page.getByRole('heading', { name: 'Events and attendance', exact: true }),
+  ).toBeVisible();
+  await mkdir('../docs/evidence/RUSH-020', { recursive: true });
+  await page.screenshot({
+    path: `../docs/evidence/RUSH-020/events-navigation-${test.info().project.name}.png`,
+    fullPage: true,
+  });
   await page.locator(`a[href$="/seasons/${season}/events/new"]`).click();
   await page.getByLabel('Event name', { exact: false }).fill('Monday Meeting');
   await page
