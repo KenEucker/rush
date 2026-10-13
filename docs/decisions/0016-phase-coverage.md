@@ -75,13 +75,14 @@ shift/area/group/staffing rows. Native time fields use the browser's time format
 help explains elapsed duration and overnight continuation. Forms retain entered
 values on validation and stale conflicts. Mobile rows stack with visible labels.
 Group members use Orchid's multiple-select pills with individual remove buttons;
-staffing shifts use a dropdown. Choices follow the current form definitions,
-including unsaved additions, without a preliminary save. Selected references to
+staffing shifts, dedicated areas and shared groups use dropdowns. Choices follow
+the current form definitions, including unsaved additions, without a preliminary save. Selected references to
 renamed or removed definitions remain visible as “not defined” until explicitly
 replaced or removed; the domain service still rejects unknown references. Failed
 saves retain selected arrays. No staffing rows or position counts are inferred.
 Area names still cannot contain commas under the existing domain contract.
-Staffing target names must match the chosen model's area or group exactly.
+Staffing targets include explicit empty choices so managers can clear the other
+model's target when switching coverage models.
 
 Orchid administration is online per Technical §7.4. No Dexie version, sync
 command, Workbox API cache, Pinia persistence or extra queue is added. Ranger

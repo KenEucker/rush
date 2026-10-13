@@ -16,8 +16,8 @@
         .matrix th:has(input[aria-label="Group name"])::before { content: 'Group name'; }
         .matrix th:has(select[aria-label="Group area names"])::before { content: 'Area names'; }
         .matrix th:has(select[aria-label="Staffing shift name"])::before { content: 'Shift name'; }
-        .matrix th:has(input[aria-label="Staffing dedicated area"])::before { content: 'Dedicated area'; }
-        .matrix th:has(input[aria-label="Staffing shared group"])::before { content: 'Shared group'; }
+        .matrix th:has(select[aria-label="Staffing dedicated area"])::before { content: 'Dedicated area'; }
+        .matrix th:has(select[aria-label="Staffing shared group"])::before { content: 'Shared group'; }
         .matrix th:has(input[aria-label="Required positions"])::before { content: 'Positions'; }
     }
 </style>
@@ -36,7 +36,7 @@
             connect() {
                 this.form = this.element.closest('form');
                 this.onReferenceInput = (event) => {
-                    if (event.target.matches('input[name^="configuration[areas]"][name$="[name]"], input[name^="configuration[shifts]"][name$="[name]"], select[aria-label="Group area names"], select[aria-label="Staffing shift name"]')) {
+                    if (event.target.matches('input[name$="[name]"], select')) {
                         this.refreshReferences();
                     }
                 };
@@ -58,14 +58,20 @@
             }
 
             refreshReferences() {
-                for (const [collection, label] of [['areas', 'Group area names'], ['shifts', 'Staffing shift name']]) {
+                const references = [
+                    ['areas', 'Group area names', ''],
+                    ['shifts', 'Staffing shift name', 'Choose a shift'],
+                    ['areas', 'Staffing dedicated area', 'No dedicated area'],
+                    ['groups', 'Staffing shared group', 'No shared group'],
+                ];
+                for (const [collection, label, emptyLabel] of references) {
                     const names = [...new Set([...this.form.querySelectorAll(`input[name^="configuration[${collection}]"][name$="[name]"]`)]
                         .map((input) => input.value.trim()).filter(Boolean))];
                     for (const select of this.form.querySelectorAll(`select[aria-label="${label}"]`)) {
                         const selected = [...select.selectedOptions].map((option) => option.value).filter(Boolean);
                         const values = [...new Set([...names, ...selected])];
                         const options = values.map((value) => ({ value, text: names.includes(value) ? value : `${value} (not defined)` }));
-                        if (!select.multiple) options.unshift({ value: '', text: 'Choose a shift' });
+                        if (!select.multiple) options.unshift({ value: '', text: emptyLabel });
                         const choices = select.tomselect;
                         if (choices) {
                             choices.control_input.setAttribute('aria-label', label);

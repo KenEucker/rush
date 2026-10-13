@@ -113,7 +113,8 @@ that workflow. GitHub CI must rerun for the updated commit.
 ## Coverage selector follow-up (2026-10-13)
 
 R-02/R-03 configuration now uses Orchid multiple-select pills for shared-area
-membership and a dropdown for staffing shifts. Choices follow unsaved definitions
+membership and dropdowns for staffing shifts, dedicated areas and shared groups.
+Choices follow unsaved definitions
 on the page. Renamed/deleted selected references remain marked “not defined” for
 explicit correction, including after Server rejection. Clearing an invalid
 selection removes it from the choices. Position counts and staffing rows remain
@@ -130,6 +131,9 @@ Checks executed for this follow-up:
   and a production-built PWA. Covers dropdown choices before saving definitions,
   shift renames, pill removal/reselection, newly added areas, removed references,
   retained selections after validation, stale revision recovery and save/reload.
+  The extended staffing-target tests also cover initially empty dropdowns,
+  unsaved area/group additions and renames, deleted selected groups, mixed-model
+  rejection, clearing the unused target and persistence of both target fields.
 - Client `npm run lint:check` and `npm run typecheck`: **passed**.
 - Root `npm run conventions:test`: **8 passed**; `git diff --check`: **passed**.
 
@@ -141,3 +145,6 @@ mobile labels and controls fit without horizontal overflow.
 
 No migration is required. Existing stored names and group membership load into
 the new controls. Review and required CI remain pending for this follow-up.
+The Server, Pint, lint, type and desktop/mobile browser checks above were rerun
+and passed after extending the staffing target dropdowns; screenshots were
+recaptured and visually inspected.

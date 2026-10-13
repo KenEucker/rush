@@ -61,6 +61,8 @@ test('Management configures dedicated and shared phase coverage with validation 
   await page.locator('select[name="configuration[model]"]').selectOption('dedicated');
   await page.getByRole('link', { name: 'Add staffing requirement', exact: true }).click();
   await expect(selector('Staffing shift name').locator('select')).toHaveValue('');
+  await expect(selector('Staffing dedicated area').locator('select')).toHaveValue('');
+  await expect(selector('Staffing shared group').locator('select')).toHaveValue('');
   await page.getByRole('link', { name: 'Add shift', exact: true }).click();
   await page.getByLabel('Shift name', { exact: true }).fill('Evening');
   await page.getByLabel('Shift local start', { exact: true }).fill('21:30');
@@ -77,8 +79,26 @@ test('Management configures dedicated and shared phase coverage with validation 
   await choose('Staffing shift name', 'Night');
   await page.getByLabel('Shift name', { exact: true }).fill('Evening');
   await choose('Staffing shift name', 'Evening');
-  await page.getByLabel('Staffing dedicated area', { exact: true }).fill('North');
-  await page.getByLabel('Staffing shared group', { exact: true }).fill('Invalid mixed model');
+  await choose('Staffing dedicated area', 'North');
+  await page.getByLabel('Area name', { exact: true }).first().fill('Northern area');
+  await expect(selector('Staffing dedicated area').locator('.item')).toHaveText(
+    'North (not defined)',
+  );
+  await choose('Staffing dedicated area', 'Northern area');
+  await page.getByLabel('Area name', { exact: true }).first().fill('North');
+  await choose('Staffing dedicated area', 'North');
+  await page.getByRole('link', { name: 'Add shared group', exact: true }).click();
+  const temporaryGroup = page.getByLabel('Group name', { exact: true });
+  await temporaryGroup.fill('Temporary group');
+  await choose('Group area names', 'North');
+  await choose('Staffing shared group', 'Temporary group');
+  await temporaryGroup
+    .locator('xpath=ancestor::tr')
+    .getByRole('link', { name: 'Remove row' })
+    .click();
+  await expect(selector('Staffing shared group').locator('.item')).toHaveText(
+    'Temporary group (not defined)',
+  );
   await page.getByLabel('Required positions', { exact: true }).fill('2');
   await page
     .getByLabel('Reason for coverage change', { exact: false })
@@ -87,12 +107,16 @@ test('Management configures dedicated and shared phase coverage with validation 
   await expect(page.getByText(/coverage models cannot be mixed/).first()).toBeVisible();
   await expect(page.getByLabel('Shift local start', { exact: true })).toHaveValue('21:30');
   await expect(selector('Staffing shift name').locator('select')).toHaveValue('Evening');
-  await page.getByLabel('Staffing shared group', { exact: true }).clear();
+  await expect(selector('Staffing dedicated area').locator('select')).toHaveValue('North');
+  await expect(selector('Staffing shared group').locator('select')).toHaveValue('Temporary group');
+  await choose('Staffing shared group', 'No shared group');
   await page.getByRole('button', { name: 'Save phase coverage', exact: true }).click();
   await expect(page.getByText('Phase coverage saved.').first()).toBeVisible();
   await expect(page.locator('input[name="configuration[expected_revision]"]')).toHaveValue('1');
   await page.reload();
   await expect(page.getByLabel('Shift duration in minutes', { exact: true })).toHaveValue('390');
+  await expect(selector('Staffing dedicated area').locator('select')).toHaveValue('North');
+  await expect(selector('Staffing shared group').locator('select')).toHaveValue('');
 
   const stale = await context.newPage();
   await stale.goto(page.url());
@@ -112,8 +136,15 @@ test('Management configures dedicated and shared phase coverage with validation 
   await choose('Group area names', 'East');
   await newArea.locator('xpath=ancestor::tr').getByRole('link', { name: 'Remove row' }).click();
   await expect(members.locator('.item[data-value="East"]')).toContainText('East (not defined)');
-  await page.getByLabel('Staffing dedicated area', { exact: true }).clear();
-  await page.getByLabel('Staffing shared group', { exact: true }).fill('Joint patrol');
+  await choose('Staffing dedicated area', 'No dedicated area');
+  await choose('Staffing shared group', 'Joint patrol');
+  await page.getByLabel('Group name', { exact: true }).fill('Combined patrol');
+  await expect(selector('Staffing shared group').locator('.item')).toHaveText(
+    'Joint patrol (not defined)',
+  );
+  await choose('Staffing shared group', 'Combined patrol');
+  await page.getByLabel('Group name', { exact: true }).fill('Joint patrol');
+  await choose('Staffing shared group', 'Joint patrol');
   await page.getByLabel('Required positions', { exact: true }).fill('1');
   await page
     .getByLabel('Reason for coverage change', { exact: false })
@@ -121,6 +152,8 @@ test('Management configures dedicated and shared phase coverage with validation 
   await page.getByRole('button', { name: 'Save phase coverage', exact: true }).click();
   await expect(page.getByText('Choose areas defined in this phase.').first()).toBeVisible();
   await expect(members.locator('select')).toHaveValues(['North', 'South', 'East']);
+  await expect(selector('Staffing dedicated area').locator('select')).toHaveValue('');
+  await expect(selector('Staffing shared group').locator('select')).toHaveValue('Joint patrol');
   await members.locator('.item[data-value="East"] .remove').click();
   await page.getByRole('button', { name: 'Save phase coverage', exact: true }).click();
   await expect(page.locator('input[name="configuration[expected_revision]"]')).toHaveValue('2');
@@ -149,6 +182,8 @@ test('Management configures dedicated and shared phase coverage with validation 
   await page.reload();
   await expect(members.locator('select')).toHaveValues(['North', 'South']);
   await expect(selector('Staffing shift name').locator('select')).toHaveValue('Evening');
+  await expect(selector('Staffing dedicated area').locator('select')).toHaveValue('');
+  await expect(selector('Staffing shared group').locator('select')).toHaveValue('Joint patrol');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );

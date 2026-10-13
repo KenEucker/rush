@@ -66,10 +66,10 @@ class PhaseCoverageScreen extends Screen
                 ->maxRows(100)->addRowLabel('Add shared group')->help('Shared model only. Choose coverage areas defined above; remove a selected area with its × button. Remove groups when switching to dedicated coverage.'),
             Matrix::make('configuration.staffing')->title('Staffing requirements')->columns(['Shift name' => 'shift_name', 'Dedicated area' => 'area_name', 'Shared group' => 'group_name', 'Positions' => 'positions'])
                 ->fields(['shift_name' => $this->referenceSelect('Staffing shift name')->empty('Choose a shift')->required(),
-                    'area_name' => Input::make()->set('aria-label', 'Staffing dedicated area'),
-                    'group_name' => Input::make()->set('aria-label', 'Staffing shared group'),
+                    'area_name' => $this->referenceSelect('Staffing dedicated area')->empty('No dedicated area'),
+                    'group_name' => $this->referenceSelect('Staffing shared group')->empty('No shared group'),
                     'positions' => Input::make()->type('number')->min(0)->step(1)->set('aria-label', 'Required positions')->required()])
-                ->maxRows(10000)->addRowLabel('Add staffing requirement')->help('Choose a shift defined above. Fill only the exact target name for the chosen model. Zero means no required positions; an omitted pair is unconfigured, not inferred coverage. Selections marked “not defined” must be replaced or removed after renaming or removing a definition.'),
+                ->maxRows(10000)->addRowLabel('Add staffing requirement')->help('Choose a shift and only the area or group for the chosen model from the definitions above. Leave the other target empty. Zero means no required positions; an omitted pair is unconfigured, not inferred coverage. Selections marked “not defined” must be replaced or removed after renaming or removing a definition.'),
             Input::make('configuration.reason')->title('Reason for coverage change')->required()->maxlength(500),
         ])];
     }

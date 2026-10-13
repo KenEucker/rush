@@ -57,8 +57,10 @@ Zero positions is explicit; absent shift/target pairs remain unconfigured.
 Orchid uses `/admin/organizations/{organization}/phases/{phase}/coverage` with
 only GET and POST `save` exposed. It invokes SavePhaseCoverage and adapts only
 form field names and missing matrix arrays. Group area names are selected as
-removable pills and submitted as an array. Staffing shift dropdowns and area
-choices follow the current form's definitions, including unsaved additions.
+removable pills and submitted as an array. Staffing shift, dedicated-area and
+shared-group dropdowns follow the current form's definitions, including unsaved
+additions.
+Each staffing target can be cleared; only the chosen model's target may be set.
 Removed/renamed selected references remain marked “not defined” for explicit
 correction. Failed saves preserve selections; Server validation is authoritative.
 
