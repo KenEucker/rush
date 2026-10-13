@@ -125,13 +125,13 @@ Common aliases are available in the root `package.json`:
 
 | Purpose | npm scripts |
 | --- | --- |
-| Database | `server:migrate`, `server:migrate:status`, `server:migrate:rollback`, `server:migrate:fresh`, `server:migrate:refresh`, `server:migrate:reset`, `server:seed` |
+| Database | `server:migrate`, `server:migrate:status`, `server:migrate:rollback`, `server:migrate:fresh`, `server:migrate:refresh`, `server:migrate:reset`, `server:seed`, `server:db:show`, `server:db:table` |
 | Clear caches | `server:cache:clear`, `server:config:clear`, `server:route:clear`, `server:view:clear`, `server:event:clear`, `server:optimize:clear` |
 | Build caches | `server:optimize`, `server:config:cache`, `server:route:cache`, `server:view:cache`, `server:event:cache` |
 | Setup | `server:key:generate`, `server:storage:link` |
 | Queues | `server:queue:work`, `server:queue:restart`, `server:queue:failed`, `server:queue:retry` |
-| Scheduler | `server:schedule:list`, `server:schedule:run`, `server:schedule:work` |
-| Operations | `server:about`, `server:route:list`, `server:event:list`, `server:up`, `server:down` |
+| Scheduler | `server:schedule:list`, `server:schedule:run`, `server:schedule:work`, `server:schedule:clear-cache` |
+| Operations | `server:about`, `server:config:show`, `server:route:list`, `server:event:list`, `server:up`, `server:down` |
 
 Pass extra arguments after `--`, such as `npm run server:migrate -- --pretend`
 or `npm run server:queue:retry -- <job-id>`. These run locally, using `server/.env`.

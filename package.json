@@ -86,6 +86,14 @@
     "docker:logs": "docker compose logs",
     "docker:ps": "docker compose ps",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "server:db:show": "php server/artisan db:show",
+    "docker:server:db:show": "docker compose exec -T --user www-data server php artisan db:show",
+    "server:db:table": "php server/artisan db:table",
+    "docker:server:db:table": "docker compose exec -T --user www-data server php artisan db:table",
+    "server:config:show": "php server/artisan config:show",
+    "docker:server:config:show": "docker compose exec -T --user www-data server php artisan config:show",
+    "server:schedule:clear-cache": "php server/artisan schedule:clear-cache",
+    "docker:server:schedule:clear-cache": "docker compose exec -T --user www-data server php artisan schedule:clear-cache"
   }
 }
