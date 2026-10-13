@@ -16,7 +16,7 @@ class ManagementAccess
 
         // Orchid's generic relation, attachment and account tools are not organization scoped.
         // Enable new routes only with their own domain policies in the owning task.
-        $seasonRoute = $request->routeIs('platform.seasons', 'platform.phase-coverage', 'platform.phase-policies') &&
+        $seasonRoute = $request->routeIs('platform.seasons', 'platform.phase-coverage', 'platform.phase-policies', 'platform.events') &&
             ($request->isMethod('GET') || ($request->isMethod('POST') && $request->route('method') === 'save'));
         $availabilityRoute = $request->routeIs('platform.unavailability') &&
             ($request->isMethod('GET') || ($request->isMethod('POST') && in_array($request->route('method'), ['save', 'acknowledge'], true)));

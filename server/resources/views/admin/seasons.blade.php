@@ -31,6 +31,7 @@
                     · {{ $item->timezone }} · {{ $item->phases->count() }} phases · Revision {{ $item->revision }}
                 </div>
                 <ul>
+                    <li><a href="{{ route('platform.events', [$organization->id, $item->id, 'new']) }}">Configure one-off events and attendance</a></li>
                     @foreach($item->phases as $phase)
                         <li><a href="{{ route('platform.phase-coverage', [$organization->id, $phase->id]) }}">Configure shifts and coverage — {{ $phase->name }}</a></li>
                         <li><a href="{{ route('platform.phase-policies', [$organization->id, $phase->id]) }}">Configure scheduling policies — {{ $phase->name }}</a></li>
