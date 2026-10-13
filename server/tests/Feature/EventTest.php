@@ -39,6 +39,9 @@ it('links event management from the management home only for authorized organiza
     }
     $response = $this->actingAs($this->manager->user)->get('/admin/main')->assertOk()
         ->assertSee('Events and attendance')
+        ->assertSee('Shifts and coverage')->assertSee('Scheduling policies')->assertSee('Unavailability notices')
+        ->assertSee(route('platform.phase-coverage', [$this->manager->organization_id, $this->season->phases->first()->id]), false)
+        ->assertSee(route('platform.phase-policies', [$this->manager->organization_id, $this->season->phases->first()->id]), false)
         ->assertSee(route('platform.events', [$this->manager->organization_id, $this->season->id, 'new']), false);
     foreach ($hiddenOrganizations as $name) {
         $response->assertDontSee($name);

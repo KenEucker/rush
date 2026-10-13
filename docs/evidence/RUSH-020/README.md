@@ -18,9 +18,11 @@ ordinary shift/coverage records. Paid attendance exposes elapsed source interval
 split by local week/phase for later scheduling and timesheet integration.
 No recurrence, pay calculation, publication, or offline event administration.
 
-Event management is reachable from the Management home under **Events and
-attendance**, with a sidebar shortcut and direct links for each authorized
-organization's seasons. Managers without a season see a create-season link.
+Management has separate expandable sidebar sections for **Seasons and phases**,
+**Shifts and coverage**, **Scheduling policies**, **Events and attendance**, and
+**Unavailability notices**. The menu links directly to authorized organization,
+season and phase screens. Missing seasons/phases offer setup links. The home
+screen retains its shortcuts.
 
 UUID event/attendance identities, same-tenant foreign keys, revision/season
 checks, Management policies, transactional before/after audit, and retained form
@@ -92,6 +94,15 @@ starting from the Management home, with the production-PWA fixture rebuilt,
 migrated and seeded. Navigation screenshots were visually reviewed.
 The local development PHP container was restarted to invalidate opcode caching;
 no development data was changed.
+
+Expanded-menu follow-up: the targeted authorization/empty-season Pest cases
+passed **2 tests, 15 assertions**; Pint, Client lint and TypeScript passed.
+The updated desktop/mobile Playwright event tests passed **2 tests**, navigating
+all five sidebar sections before creating the event. The initial mobile run
+clicked the empty attendee control without opening its dropdown; the final test
+uses the visible attendee search input. Menu screenshots wait for expansion to
+finish and were visually reviewed. No routes, permissions or database schema
+changed for the expanded menu.
 
 ## Migration and remaining gates
 

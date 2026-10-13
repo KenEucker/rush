@@ -34,6 +34,7 @@ test('Management configures a one-off paid meeting, reviews staffing and retains
   const identity = (await (await context.request.get('/api/v1/session')).json()) as SessionIdentity;
   const organization = identity.memberships[0]!.organization.id;
   const season = randomUUID();
+  const phase = randomUUID();
   const base = `/api/v1/organizations/${organization}/seasons/${season}`;
   expect(
     (
@@ -46,7 +47,9 @@ test('Management configures a one-off paid meeting, reviews staffing and retains
           timezone: 'America/Los_Angeles',
           week_starts_on: 1,
           expected_revision: null,
-          phases: [],
+          phases: [
+            { id: phase, name: 'Full season', starts_on: '2026-01-01', ends_on: '2026-12-31' },
+          ],
         },
       })
     ).status(),
@@ -55,12 +58,48 @@ test('Management configures a one-off paid meeting, reviews staffing and retains
   await expect(
     page.getByRole('heading', { name: 'Events and attendance', exact: true }),
   ).toBeVisible();
+  const menu = page.locator('#headerMenuCollapse');
+  async function openMenuSection(name: string, slug: string) {
+    if (!(await menu.isVisible())) await page.locator('.header-toggler').click();
+    const section = menu.locator(`#menu-${slug}`);
+    if (!(await section.isVisible())) await menu.getByRole('link', { name, exact: true }).click();
+    await expect(section).toBeVisible();
+    await expect(section).toHaveClass(/\bshow\b/);
+    return section;
+  }
+  for (const [name, slug, path] of [
+    [
+      'Seasons and phases',
+      'seasons-and-phases',
+      `/admin/organizations/${organization}/seasons/${season}`,
+    ],
+    [
+      'Shifts and coverage',
+      'shifts-and-coverage',
+      `/admin/organizations/${organization}/phases/${phase}/coverage`,
+    ],
+    [
+      'Scheduling policies',
+      'scheduling-policies',
+      `/admin/organizations/${organization}/phases/${phase}/policies`,
+    ],
+    [
+      'Unavailability notices',
+      'unavailability-notices',
+      `/admin/organizations/${organization}/unavailability/new`,
+    ],
+  ]) {
+    const section = await openMenuSection(name!, slug!);
+    await section.locator(`a[href$="${path}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`${path}$`));
+  }
+  const eventMenu = await openMenuSection('Events and attendance', 'events-and-attendance');
   await mkdir('../docs/evidence/RUSH-020', { recursive: true });
   await page.screenshot({
     path: `../docs/evidence/RUSH-020/events-navigation-${test.info().project.name}.png`,
     fullPage: true,
   });
-  await page.locator(`a[href$="/seasons/${season}/events/new"]`).click();
+  await eventMenu.locator(`a[href$="/seasons/${season}/events/new"]`).click();
   await page.getByLabel('Event name', { exact: false }).fill('Monday Meeting');
   await page
     .getByLabel('Event starts (season time zone)', { exact: false })
@@ -93,7 +132,7 @@ test('Management configures a one-off paid meeting, reviews staffing and retains
   expect(ranger).toBeTruthy();
   // Orchid enhances multi-selects; operate the visible searchable control.
   const control = attendees.locator('..').locator('.ts-control');
-  await control.click();
+  await control.locator('input').fill('Casey');
   await page.locator('.ts-dropdown .option').filter({ hasText: 'Casey Brooks' }).click();
   await page
     .getByLabel('Reason for event change', { exact: false })
