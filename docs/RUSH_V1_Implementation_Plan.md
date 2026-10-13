@@ -327,6 +327,9 @@ See [ADR 0016](decisions/0016-phase-coverage.md),
 Pest covers validation, authorization, rollback, independent phases, DST,
 partial bounds and PostgreSQL concurrent managers. Playwright covers desktop/mobile
 configuration, reload, model changes, validation and retained stale input.
+The RUSH-016 usability follow-up adds removable shared-area pills and staffing
+shift dropdowns sourced from current unsaved definitions, with browser coverage
+for selection removal and retained invalid references.
 Administration stays online; no Client database or sync changes. Scenarios 1–2
 have configuration evidence; generation/gaps/publication and all nine full
 acceptance-scenario owners remain unchanged. Human review, CI and merge remain

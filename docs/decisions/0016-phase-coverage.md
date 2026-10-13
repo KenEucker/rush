@@ -74,10 +74,14 @@ The existing season screen links each phase to an Orchid form with accessible
 shift/area/group/staffing rows. Native time fields use the browser's time format;
 help explains elapsed duration and overnight continuation. Forms retain entered
 values on validation and stale conflicts. Mobile rows stack with visible labels.
-Group members use comma-separated area names in the form (arrays in JSON);
-area names cannot contain commas. References use exact names and must be updated
-in the same save when renaming an input. This keeps initial configuration in one
-form without requiring preliminary saves to populate selectors.
+Group members use Orchid's multiple-select pills with individual remove buttons;
+staffing shifts use a dropdown. Choices follow the current form definitions,
+including unsaved additions, without a preliminary save. Selected references to
+renamed or removed definitions remain visible as “not defined” until explicitly
+replaced or removed; the domain service still rejects unknown references. Failed
+saves retain selected arrays. No staffing rows or position counts are inferred.
+Area names still cannot contain commas under the existing domain contract.
+Staffing target names must match the chosen model's area or group exactly.
 
 Orchid administration is online per Technical §7.4. No Dexie version, sync
 command, Workbox API cache, Pinia persistence or extra queue is added. Ranger

@@ -45,9 +45,22 @@ test('Management configures dedicated and shared phase coverage with validation 
   );
   expect(season.status()).toBe(201);
   const phases = ((await season.json()) as { phases: { id: string }[] }).phases;
+  const selector = (label: string) => page.locator(`select[aria-label="${label}"]`).locator('..');
+  const choose = async (label: string, name: string) => {
+    const field = selector(label);
+    if (!(await field.locator('.ts-dropdown').isVisible())) {
+      // Target the search input in a multi-select; its center can contain a pill's remove button.
+      const multiple = await field.locator('select').getAttribute('multiple');
+      await field.locator(multiple === null ? '.ts-control' : '.ts-control input').click();
+    }
+    await field.locator('.ts-dropdown').getByText(name, { exact: true }).click();
+  };
   await page.goto(`/admin/organizations/${organization}/seasons/${seasonId}`);
   await page.locator(`a[href$="/phases/${phases[0]!.id}/coverage"]`).click();
+  await expect(page).toHaveURL(new RegExp(`/phases/${phases[0]!.id}/coverage$`));
   await page.locator('select[name="configuration[model]"]').selectOption('dedicated');
+  await page.getByRole('link', { name: 'Add staffing requirement', exact: true }).click();
+  await expect(selector('Staffing shift name').locator('select')).toHaveValue('');
   await page.getByRole('link', { name: 'Add shift', exact: true }).click();
   await page.getByLabel('Shift name', { exact: true }).fill('Evening');
   await page.getByLabel('Shift local start', { exact: true }).fill('21:30');
@@ -56,8 +69,14 @@ test('Management configures dedicated and shared phase coverage with validation 
     await page.getByRole('link', { name: 'Add area', exact: true }).click();
     await page.getByLabel('Area name', { exact: true }).last().fill(name);
   }
-  await page.getByRole('link', { name: 'Add staffing requirement', exact: true }).click();
-  await page.getByLabel('Staffing shift name', { exact: true }).fill('Evening');
+  await choose('Staffing shift name', 'Evening');
+  await page.getByLabel('Shift name', { exact: true }).fill('Night');
+  await expect(selector('Staffing shift name').locator('.item')).toHaveText(
+    'Evening (not defined)',
+  );
+  await choose('Staffing shift name', 'Night');
+  await page.getByLabel('Shift name', { exact: true }).fill('Evening');
+  await choose('Staffing shift name', 'Evening');
   await page.getByLabel('Staffing dedicated area', { exact: true }).fill('North');
   await page.getByLabel('Staffing shared group', { exact: true }).fill('Invalid mixed model');
   await page.getByLabel('Required positions', { exact: true }).fill('2');
@@ -67,6 +86,7 @@ test('Management configures dedicated and shared phase coverage with validation 
   await page.getByRole('button', { name: 'Save phase coverage', exact: true }).click();
   await expect(page.getByText(/coverage models cannot be mixed/).first()).toBeVisible();
   await expect(page.getByLabel('Shift local start', { exact: true })).toHaveValue('21:30');
+  await expect(selector('Staffing shift name').locator('select')).toHaveValue('Evening');
   await page.getByLabel('Staffing shared group', { exact: true }).clear();
   await page.getByRole('button', { name: 'Save phase coverage', exact: true }).click();
   await expect(page.getByText('Phase coverage saved.').first()).toBeVisible();
@@ -79,13 +99,29 @@ test('Management configures dedicated and shared phase coverage with validation 
   await page.locator('select[name="configuration[model]"]').selectOption('shared');
   await page.getByRole('link', { name: 'Add shared group', exact: true }).click();
   await page.getByLabel('Group name', { exact: true }).fill('Joint patrol');
-  await page.getByLabel('Group area names', { exact: true }).fill('North, South');
+  await choose('Group area names', 'North');
+  await choose('Group area names', 'South');
+  const members = selector('Group area names');
+  await members.locator('.item[data-value="South"] .remove').click();
+  await expect(members.locator('select')).toHaveValues(['North']);
+  await choose('Group area names', 'South');
+  // New unsaved definitions are selectable immediately, and removed references retain intent.
+  await page.getByRole('link', { name: 'Add area', exact: true }).click();
+  const newArea = page.getByLabel('Area name', { exact: true }).last();
+  await newArea.fill('East');
+  await choose('Group area names', 'East');
+  await newArea.locator('xpath=ancestor::tr').getByRole('link', { name: 'Remove row' }).click();
+  await expect(members.locator('.item[data-value="East"]')).toContainText('East (not defined)');
   await page.getByLabel('Staffing dedicated area', { exact: true }).clear();
   await page.getByLabel('Staffing shared group', { exact: true }).fill('Joint patrol');
   await page.getByLabel('Required positions', { exact: true }).fill('1');
   await page
     .getByLabel('Reason for coverage change', { exact: false })
     .fill('One Ranger covers both areas');
+  await page.getByRole('button', { name: 'Save phase coverage', exact: true }).click();
+  await expect(page.getByText('Choose areas defined in this phase.').first()).toBeVisible();
+  await expect(members.locator('select')).toHaveValues(['North', 'South', 'East']);
+  await members.locator('.item[data-value="East"] .remove').click();
   await page.getByRole('button', { name: 'Save phase coverage', exact: true }).click();
   await expect(page.locator('input[name="configuration[expected_revision]"]')).toHaveValue('2');
   await stale.getByLabel('Shift name', { exact: true }).fill('Keep this unsaved shift');
@@ -111,6 +147,8 @@ test('Management configures dedicated and shared phase coverage with validation 
   expect(saved.revision).toBe(2);
   expect(saved.groups[0]!.area_names).toEqual(['North', 'South']);
   await page.reload();
+  await expect(members.locator('select')).toHaveValues(['North', 'South']);
+  await expect(selector('Staffing shift name').locator('select')).toHaveValue('Evening');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );

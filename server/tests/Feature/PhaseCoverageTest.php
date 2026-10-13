@@ -128,6 +128,28 @@ it('rejects stale season revisions and foreign row identities with atomic rollba
     $this->assertDatabaseCount('phase_coverage_changes', 1);
 });
 
+it('accepts selected area arrays from Orchid and rejects empty or unknown selections without changing coverage', function () {
+    $admin = '/admin/organizations/'.$this->manager->organization_id.'/phases/'.$this->phase->id.'/coverage';
+    $shared = [...$this->input, 'model' => 'shared',
+        'groups' => [['name' => 'Joint', 'area_names' => ['North', 'South']]],
+        'staffing' => [['shift_name' => 'Evening', 'group_name' => 'Joint', 'positions' => 2]]];
+    $this->actingAs($this->manager->user, 'web')->from($admin)
+        ->post($admin.'/save', ['configuration' => $shared])->assertRedirect($admin)->assertSessionHasNoErrors();
+    $this->getJson($this->url)->assertJsonPath('groups.0.area_names', ['North', 'South']);
+    $shared['expected_revision'] = 1;
+    foreach ([[], ['Missing'], 'North, South'] as $members) {
+        $bad = $shared;
+        $bad['groups'][0]['area_names'] = $members;
+        $this->from($admin)->post($admin.'/save', ['configuration' => $bad])
+            ->assertRedirect($admin)->assertSessionHasErrors('configuration.groups.0.area_names')
+            ->assertSessionHasInput('configuration.groups.0.area_names', $members);
+        $this->getJson($this->url)->assertJsonPath('revision', 1)->assertJsonPath('groups.0.area_names', ['North', 'South']);
+    }
+    $shared['groups'][0]['area_names'] = ['North'];
+    $this->post($admin.'/save', ['configuration' => $shared])->assertRedirect($admin)->assertSessionHasNoErrors();
+    $this->getJson($this->url)->assertJsonPath('revision', 2)->assertJsonPath('groups.0.area_names', ['North']);
+});
+
 it('rolls back all configuration when audit persistence fails', function () {
     $this->actingAs($this->manager->user)->putJson($this->url, $this->input)->assertOk();
     DB::table('phase_coverage_changes')->insert(['id' => (string) Str::uuid(), 'phase_id' => $this->phase->id,
