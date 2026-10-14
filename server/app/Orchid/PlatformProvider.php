@@ -15,7 +15,7 @@ class PlatformProvider extends OrchidServiceProvider
         $readOnly = $year->context()['readOnly'];
         $organizations = $year->organizations()
             ->with(['seasons' => fn ($query) => $year->scopeSeasons($query)->orderBy('starts_on')->orderBy('name'), 'seasons.phases'])->get();
-        $sections = ['seasons' => [], 'coverage' => [], 'policies' => [], 'events' => [], 'unavailability' => []];
+        $sections = ['seasons' => [], 'coverage' => [], 'policies' => [], 'events' => [], 'unavailability' => [], 'planning' => []];
 
         foreach ($organizations as $organization) {
             if (! $readOnly) {
@@ -26,6 +26,7 @@ class PlatformProvider extends OrchidServiceProvider
                 ->url($year->route('platform.unavailability', [$organization->id, 'new']));
             foreach ($organization->seasons as $season) {
                 $label = $season->name.' · '.$organization->name;
+                $sections['planning'][] = Menu::make($label)->route('platform.planning-inputs', [$organization->id, $season->id]);
                 $sections['seasons'][] = Menu::make($label)->route('platform.seasons', [$organization->id, $season->id]);
                 $sections['events'][] = Menu::make($label)->route('platform.events', [$organization->id, $season->id, 'new']);
                 foreach ($season->phases as $phase) {
@@ -52,6 +53,7 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('Shifts and coverage')->icon('bs.people')->list($sections['coverage']),
             Menu::make('Scheduling policies')->icon('bs.sliders')->list($sections['policies']),
             Menu::make('Events and attendance')->icon('bs.calendar-event')->list($sections['events']),
+            Menu::make('Planning inputs')->icon('bs.clipboard-check')->list($sections['planning']),
             Menu::make('Unavailability notices')->icon('bs.calendar-x')->list($sections['unavailability']),
             Menu::make('Year: '.$year->context()['year'])->icon('bs.clock-history')
                 ->set('slug', 'management-year')->active([])

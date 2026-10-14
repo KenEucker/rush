@@ -187,6 +187,7 @@ docker compose -p rush-ci -f docker/compose.ci.yaml up -d --build --wait --wait-
 docker compose -p rush-ci -f docker/compose.ci.yaml exec -T server php artisan migrate --force
 docker compose -p rush-ci -f docker/compose.ci.yaml exec -T server php artisan db:seed --force
 docker compose -p rush-ci -f docker/compose.ci.yaml exec -T server php tests/Fixtures/seed-management-years.php
+curl --fail --retry 30 --retry-all-errors --retry-delay 1 --output /dev/null http://127.0.0.1:9187/up
 npm run client:test:e2e
 docker compose -p rush-ci -f docker/compose.ci.yaml down --volumes --remove-orphans
 ```
@@ -195,6 +196,13 @@ Always run the final cleanup, even if a command fails. To rerun tests immediatel
 against the same disposable fixture, clear its login counters with `docker compose
 -p rush-ci -f docker/compose.ci.yaml exec -T server php artisan cache:clear`.
 The real limiter remains enabled during each test run.
+
+The HTTP readiness check is necessary after replacing the Server container:
+Compose can report it running while the entrypoint is still preparing writable
+directories and PHP-FPM has not started listening. On Windows use `curl.exe` and
+`--output NUL`. This probes fixture readiness; browser assertions and retries
+remain unchanged. RUSH-022 caught an initial 502 one second before FPM readiness
+when starting a full run immediately after a rebuild.
 
 Before reporting a PR verified, run the full browser suite against a fresh fixture
 after the final code change, then check all GitHub CI jobs on the pushed commit.

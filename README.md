@@ -257,7 +257,12 @@ Development Artisan aliases include `docker:dev:migrate`,
 `docker:dev:view:clear`, `docker:dev:optimize:clear`, and `docker:dev:queue:restart`.
 Use `npm run docker:dev:help -- migrate` for command options or
 `npm run docker:dev:artisan -- <command> [options]` for any other Artisan command.
-These aliases use the development Compose override and never add `--force`.
+
+Development aliases also cover `docker:dev:migrate:fresh`, `migrate:refresh`,
+`migrate:reset`, `event:clear`, `event:cache`, `config:cache`, `route:cache`,
+`view:cache`, `optimize` and `schedule:clear-cache` (each with the `docker:dev:`
+prefix). Migration reset/refresh/fresh remove data; these aliases never add
+`--force`. `npm run server:test:planning` runs the RUSH-022 planning tests.
 
 To return to built images:
 
