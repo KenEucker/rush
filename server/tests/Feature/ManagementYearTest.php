@@ -49,6 +49,19 @@ it('scopes menus and lists by starting year and keeps selection in links rather 
     $this->getJson('/admin/main?year[]=2025')->assertUnprocessable();
 });
 
+it('summarizes only the selected year in the management overview', function () {
+    $response = $this->get('/admin/main?year=2025')->assertOk()->assertSee('2025 overview')
+        ->assertSee('historical notices remain unacknowledged.');
+    foreach (['Seasons', 'Phases', 'One-off events', 'Unacknowledged notices'] as $label) {
+        expect($response->getContent())->toMatch('/'.preg_quote($label, '/').'<\/dt>\s*<dd[^>]*>1<\/dd>/');
+    }
+    $response = $this->get('/admin/main?year=2026')->assertOk()->assertSee('2026 overview')
+        ->assertSee('No unacknowledged notices in this year.');
+    foreach (['Phases', 'One-off events', 'Unacknowledged notices'] as $label) {
+        expect($response->getContent())->toMatch('/'.preg_quote($label, '/').'<\/dt>\s*<dd[^>]*>0<\/dd>/');
+    }
+});
+
 it('keeps archived event and phase screens viewable without mutation controls', function () {
     $phase = $this->archive->phases->first()->id;
     foreach (['coverage' => 'Save phase coverage', 'policies' => 'Save scheduling policies'] as $path => $button) {

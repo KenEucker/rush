@@ -76,7 +76,7 @@ test('Management acknowledges offline reports and edits on behalf without repair
     });
     expect(assignment.ok()).toBe(true);
     await admin.goto('/admin/main');
-    await admin.getByRole('link', { name: /Unavailability notices —/ }).click();
+    await admin.getByRole('link', { name: 'Review notices' }).click();
     const notice = admin.locator(`[data-record-id="${id}"]`);
     await expect(notice).toContainText('Affected coverage gap needs review');
     await notice.getByRole('button', { name: 'Acknowledge as seen' }).click();

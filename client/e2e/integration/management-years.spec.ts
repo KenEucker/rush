@@ -48,6 +48,15 @@ test('Management browses past starting years read-only and keeps browser tabs in
   });
   await yearMenu.getByRole('link', { name: String(currentYear - 1), exact: true }).click();
   await expect(page.getByText(/Read-only archive/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: `${currentYear - 1} overview` })).toBeVisible();
+  await expect(
+    page.getByRole('rowheader', { name: 'Archive browser proof', exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await page.screenshot({
+    path: `../docs/evidence/RUSH-020/year-overview-${test.info().project.name}.png`,
+    fullPage: true,
+  });
   await expect(yearMenu).not.toBeVisible();
   if (!(await menu.isVisible())) await page.locator('.header-toggler').click();
   await menu.getByRole('link', { name: 'Seasons and phases', exact: true }).click();

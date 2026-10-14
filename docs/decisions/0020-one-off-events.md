@@ -78,3 +78,9 @@ in the organization's zone. Management cannot edit or acknowledge past-year
 notices. Ranger availability sync behavior is unchanged. This is a Management
 configuration archive, not a new hours-finalization or publication policy.
 No database migration, Client persistent store or sync protocol is required.
+
+The Management overview presents selected-year counts of seasons, phases, events
+and unacknowledged notices per authorized organization, with season dates and
+time zones. Counts describe saved configuration, not published coverage or paid
+hours. Archived unacknowledged notices are informational. Navigation remains in
+the sidebar; overview links are contextual season, notice-review or setup actions.

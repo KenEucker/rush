@@ -30,8 +30,7 @@ years live in URLs, not a shared session preference, so tabs remain independent.
 Management has separate expandable sidebar sections for **Seasons and phases**,
 **Shifts and coverage**, **Scheduling policies**, **Events and attendance**, and
 **Unavailability notices**. The menu links directly to authorized organization,
-season and phase screens. Missing seasons/phases offer setup links. The home
-screen retains its shortcuts.
+season and phase screens. Missing seasons/phases offer setup links. The home screen summarizes the selected year.
 
 UUID event/attendance identities, same-tenant foreign keys, revision/season
 checks, Management policies, transactional before/after audit, and retained form
@@ -161,3 +160,24 @@ history, and a composite season key. Rollback removes this task's event and audi
 data; back it up before rollback. There are no Client database/sync migrations,
 new dependencies, or scheduled jobs. Human review, required CI, and merge remain
 necessary before marking RUSH-020 done.
+
+## Selected-year overview follow-up
+
+The Management home summarizes each authorized organization's selected starting
+year with season, phase, one-off event and unacknowledged-notice totals. A season
+table shows local date ranges and time zones with links to individual seasons.
+Notices needing acknowledgment have a review action; archived notices are labeled
+historical. Empty years explain the absence of seasons and offer setup only when
+editable. Routine navigation stays in the sidebar. No schema or sync changes.
+
+Verification: targeted SQLite event/year/notice tests passed 51 tests (352
+assertions), with 5 PostgreSQL-only skips. After adding overview totals coverage,
+the year suite passed 9 tests (88 assertions). Pint passed.
+
+The overview, seasons and notice Playwright specs passed all 10 desktop/mobile
+tests. Client lint and TypeScript passed. Overview screenshots:
+[desktop](year-overview-desktop.png), [mobile](year-overview-mobile.png).
+
+Final overview screenshot run: 2 desktop/mobile tests passed after ensuring
+navigation completed and keeping the mobile table horizontally scrollable.
+Screenshots were visually reviewed.

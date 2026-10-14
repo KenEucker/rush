@@ -22,7 +22,7 @@ class PlatformScreen extends ManagementScreen
 
         return ['organizations' => Organization::query()->whereHas('memberships', fn ($query) => $query
             ->where('user_id', auth()->id())->where('is_active', true)->where('role', 'management'))
-            ->with(['seasons' => fn ($query) => $year->scopeSeasons($query)->orderByDesc('starts_on')->orderBy('name')])->orderBy('name')->get()
+            ->with(['seasons' => fn ($query) => $year->scopeSeasons($query)->withCount(['phases', 'events'])->orderBy('starts_on')->orderBy('name')])->orderBy('name')->get()
             ->each(function ($organization) use ($year) {
                 $start = CarbonImmutable::create($year->context()['year'], 1, 1, 0, 0, 0, $organization->timezone);
                 $organization->unavailability_notice_count = Unavailability::query()->where('organization_id', $organization->id)
