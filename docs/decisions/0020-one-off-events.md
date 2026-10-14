@@ -63,8 +63,11 @@ the season's IANA time zone. Seasons, phases, coverage, policies and events
 remain viewable; their shared Server services reject edits, new events within
 archived seasons, and creation/backdating of seasons into past years.
 
-The selector appears on every Management screen. Menus and season lists contain
-only seasons starting in the selected year. Existing record URLs derive their
+Year switching lives in a collapsed sidebar item labeled with the selected year,
+so occasional switching does not occupy the working area of every screen. Opening
+it reveals year links; choosing one returns to the Management overview. Archived
+screens retain a visible read-only notice. Menus and season lists contain only
+seasons starting in the selected year. Existing record URLs derive their
 year from the record; list/create links carry the year in the URL. No shared
 session preference is used, so separate tabs remain independent. Available
 season/notice years, the current year and next year are selectable. Current/future

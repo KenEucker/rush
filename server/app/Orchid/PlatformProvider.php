@@ -53,6 +53,10 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('Scheduling policies')->icon('bs.sliders')->list($sections['policies']),
             Menu::make('Events and attendance')->icon('bs.calendar-event')->list($sections['events']),
             Menu::make('Unavailability notices')->icon('bs.calendar-x')->list($sections['unavailability']),
+            Menu::make('Year: '.$year->context()['year'])->icon('bs.clock-history')
+                ->set('slug', 'management-year')->active([])
+                ->list(array_map(fn (int $value) => Menu::make((string) $value)
+                    ->route('platform.main', ['year' => $value]), $year->years())),
             Menu::make('Return to RUSH')->url('/')->icon('bs.arrow-left'),
         ];
     }

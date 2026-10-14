@@ -28,14 +28,27 @@ test('Management browses past starting years read-only and keeps browser tabs in
     (await context.cookies()).find((cookie) => cookie.name === 'XSRF-TOKEN')!.value,
   );
   await page.goto('/admin/main');
-  const currentYear = Number(
-    await page.getByLabel('Management year', { exact: true }).inputValue(),
-  );
-  await expect(page.getByText('Archive browser proof', { exact: true })).toHaveCount(0);
-  await page.getByLabel('Management year', { exact: true }).selectOption(String(currentYear - 1));
-  await page.getByRole('button', { name: 'View year', exact: true }).click();
-  await expect(page.getByText(/Read-only archive/)).toBeVisible();
   const menu = page.locator('#headerMenuCollapse');
+  const yearMenu = menu.locator('#menu-management-year');
+  const yearLabel = page.getByRole('link', { name: /^Year: \d{4}$/, includeHidden: true });
+  const openYears = async () => {
+    if (!(await menu.isVisible())) await page.locator('.header-toggler').click();
+    await expect(yearMenu).not.toBeVisible();
+    await yearLabel.click();
+    await expect(yearMenu).toHaveClass(/\bshow\b/);
+  };
+  const currentYear = Number((await yearLabel.textContent())!.match(/\d{4}/)![0]);
+  await expect(page.getByRole('button', { name: 'View year', exact: true })).toHaveCount(0);
+  await expect(page.getByText('Archive browser proof', { exact: true })).toHaveCount(0);
+  await openYears();
+  await mkdir('../docs/evidence/RUSH-020', { recursive: true });
+  await page.screenshot({
+    path: `../docs/evidence/RUSH-020/year-menu-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+  await yearMenu.getByRole('link', { name: String(currentYear - 1), exact: true }).click();
+  await expect(page.getByText(/Read-only archive/)).toBeVisible();
+  await expect(yearMenu).not.toBeVisible();
   if (!(await menu.isVisible())) await page.locator('.header-toggler').click();
   await menu.getByRole('link', { name: 'Seasons and phases', exact: true }).click();
   await menu
@@ -64,18 +77,15 @@ test('Management browses past starting years read-only and keeps browser tabs in
     ).status(),
   ).toBe(403);
   await page.reload();
-  await expect(page.getByLabel('Management year', { exact: true })).toHaveValue(
-    String(currentYear - 1),
-  );
+  await expect(yearLabel).toContainText(`Year: ${currentYear - 1}`);
   const otherTab = await context.newPage();
   await otherTab.goto('/admin/main');
-  await expect(otherTab.getByLabel('Management year', { exact: true })).toHaveValue(
-    String(currentYear),
-  );
+  await expect(
+    otherTab.getByRole('link', { name: /^Year: \d{4}$/, includeHidden: true }),
+  ).toContainText(`Year: ${currentYear}`);
   await otherTab.close();
   await page.reload();
   await expect(page.getByLabel('Event name', { exact: false })).toBeDisabled();
-  await mkdir('../docs/evidence/RUSH-020', { recursive: true });
   await page.screenshot({
     path: `../docs/evidence/RUSH-020/year-archive-${test.info().project.name}.png`,
     fullPage: true,
@@ -83,8 +93,10 @@ test('Management browses past starting years read-only and keeps browser tabs in
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
   ).toBe(true);
-  await page.getByLabel('Management year', { exact: true }).selectOption(String(currentYear + 1));
-  await page.getByRole('button', { name: 'View year', exact: true }).click();
+  await openYears();
+  await yearMenu.getByRole('link', { name: String(currentYear + 1), exact: true }).click();
+  await expect(yearLabel).toContainText(`Year: ${currentYear + 1}`);
+  await expect(yearMenu).not.toBeVisible();
   await expect(page.getByText(/Read-only archive/)).toHaveCount(0);
   await expect(
     page.getByRole('link', { name: 'Create a season to configure events' }),

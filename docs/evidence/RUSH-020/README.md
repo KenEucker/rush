@@ -19,6 +19,8 @@ split by local week/phase for later scheduling and timesheet integration.
 No recurrence, pay calculation, publication, or offline event administration.
 
 The owner-approved year selector scopes menus and lists to season starting year.
+It lives in a collapsed **Year: YYYY** sidebar item, leaving page content free of
+the switching form. Choosing a year opens its Management overview.
 Cross-year seasons appear only under their starting year and become read-only
 when that year is past in the season time zone. Historical configuration remains
 visible; Server services reject edits, new events and backdating into archived
@@ -139,6 +141,19 @@ Year-selector follow-up verification:
 This follow-up requires no additional migration or data rewrite. Restart PHP
 when deploying into a runtime that disables opcode timestamp checks. The local
 development PHP container was restarted; its database was not reseeded.
+
+Compact year-menu refinement:
+
+- `php vendor/bin/pest tests/Feature/ManagementYearTest.php --compact` on SQLite:
+  **8 passed, 75 assertions**.
+- `npm run client:test:e2e -- management-years.spec.ts`: **2 passed** on
+  desktop/mobile against the rebuilt production-PWA fixture. Covers collapsed
+  defaults, past/future switching, menu filtering, independent tabs, reloads,
+  archived controls and rejected forged edits.
+- Pint, Client lint and TypeScript: **passed**. The initial Prettier check reported
+  formatting in the updated test; formatting was corrected and lint rerun.
+- Visually reviewed the [desktop year menu](year-menu-desktop.png),
+  [mobile year menu](year-menu-mobile.png), and refreshed archive screenshots.
 
 Run `npm run docker:server:migrate -- --force` against the intended deployment
 after backup. The additive migration creates events, retained attendance, audit

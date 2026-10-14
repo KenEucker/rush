@@ -108,7 +108,7 @@ it('locks a cross-year season at midnight in its season time zone', function () 
 it('offers historical notice years even when no season was configured for that year', function () {
     Unavailability::create(['organization_id' => $this->manager->organization_id,
         'organization_membership_id' => $this->ranger->id, 'starts_at' => '2021-01-01T07:00:00Z', 'ends_at' => '2021-01-01T10:00:00Z', 'revision' => 1]);
-    $this->get('/admin/main')->assertOk()->assertSee('value="2020"', false)->assertDontSee('value="2021"', false);
+    $this->get('/admin/main')->assertOk()->assertSee('/admin/main?year=2020', false)->assertDontSee('/admin/main?year=2021', false);
 });
 
 it('does not expose other organizations through the selector or archived links', function () {
