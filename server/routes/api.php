@@ -5,6 +5,7 @@ use App\Http\Controllers\MemberProfileController;
 use App\Http\Controllers\OfficialAssignmentController;
 use App\Http\Controllers\PhaseCoverageController;
 use App\Http\Controllers\PhaseSchedulingPolicyController;
+use App\Http\Controllers\PlanningInputController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SyncController;
@@ -12,6 +13,9 @@ use App\Http\Controllers\UnavailabilityController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/organizations/{organization}/seasons/{season}/planning-inputs', [PlanningInputController::class, 'store'])->middleware('throttle:30,1');
+    Route::get('/organizations/{organization}/planning-inputs/{snapshot}', [PlanningInputController::class, 'show']);
+    Route::post('/organizations/{organization}/planning-inputs/{snapshot}/evaluate', [PlanningInputController::class, 'evaluate'])->middleware('throttle:60,1');
     Route::get('/organizations/{organization}/seasons/{season}/events', [EventController::class, 'index']);
     Route::get('/organizations/{organization}/seasons/{season}/events/{event}', [EventController::class, 'show']);
     Route::put('/organizations/{organization}/seasons/{season}/events/{event}', [EventController::class, 'save'])->middleware('throttle:120,1');

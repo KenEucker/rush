@@ -21,7 +21,9 @@ class ManagementAccess
             ($request->isMethod('GET') || ($request->isMethod('POST') && $request->route('method') === 'save'));
         $availabilityRoute = $request->routeIs('platform.unavailability') &&
             ($request->isMethod('GET') || ($request->isMethod('POST') && in_array($request->route('method'), ['save', 'acknowledge'], true)));
-        abort_unless($seasonRoute || $availabilityRoute || ($request->isMethod('GET') && $request->routeIs('platform.index', 'platform.main')), 404);
+        $planningRoute = $request->routeIs('platform.planning-inputs') &&
+            ($request->isMethod('GET') || ($request->isMethod('POST') && $request->route('method') === 'capture'));
+        abort_unless($seasonRoute || $availabilityRoute || $planningRoute || ($request->isMethod('GET') && $request->routeIs('platform.index', 'platform.main')), 404);
 
         $year = app(ManagementYear::class)->context();
         abort_if(! $request->isMethodSafe() && $year['readOnly'], 403, 'Past years are read-only.');

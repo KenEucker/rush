@@ -476,6 +476,24 @@ CI and merge remain necessary for task and milestone completion.
 
 **Milestone demonstration:** Generate low-staff and 24/7 plans, show historical Monday-evening fairness tradeoffs, review released draft, modify preferences to mark it stale, and publish on time despite gaps (scenarios 1–4).
 
+### RUSH-022 implementation evidence
+
+RUSH-001–021 are merged on production, including the Milestone 2 offline gate and
+Milestone 3 integrated configuration proof. RUSH-022 implements R-12/R-13 input
+snapshots, arbitrary planning ranges, whole-shift/event opportunities, complete
+week policy proration, published commitments, effective preferences and testable
+hard/overridable/preference constraints. The owner approved the hierarchy,
+calendar-day proration, configurable eight-hour rest and union of overlapping
+paid event/shift time. See [ADR 0022](decisions/0022-planning-inputs-and-constraints.md),
+[API contract](contracts/planning-inputs.md) and [verification](evidence/RUSH-022/README.md).
+Shared Management-only services serve Orchid and API. Immutable actor-attributed
+snapshots use coherent PostgreSQL reads and detect source staleness without
+changing assignments. Pest covers policies, boundaries, privacy and concurrent
+source changes; Playwright covers desktop/mobile capture and stale input review.
+RUSH-023–028 retain generation, scoring, gap accounting and publication. The nine
+full acceptance scenario owners remain unchanged. Human review, CI and merge
+remain required.
+
 ## 7. Milestone 5 — Published schedule operations (RUSH-029–035)
 
 **Deliverable:** Rangers can view official team schedules, request mutually agreed changes, and share messages manually; management retains control over official assignments.
@@ -587,9 +605,9 @@ The following is the authoritative task assignment index. Several requirements s
 
 Resolve and document these **before** completing their owner task. They remain open in Requirements §11:
 
-1. `RUSH-022/024`: precise constraint hierarchy, fairness tradeoffs, rest rules and infeasible cases.
+1. `RUSH-022/024`: hierarchy, rest and infeasibility resolved with owner approval in [ADR 0022](decisions/0022-planning-inputs-and-constraints.md). RUSH-024 retains precise scoring weights/fairness tradeoffs.
 2. `RUSH-017`: resolved with owner approval in [ADR 0017](decisions/0017-scheduling-policies.md): phase-specific shift baseline with weekday and date overrides; local start date selects date → weekday → baseline. Personal positive preferences remain separate.
-3. `RUSH-015/037`: calendar policy resolved with owner approval in [ADR 0015](decisions/0015-season-calendar-policy.md). RUSH-017 stores configurable hour inputs without legal defaults. Mixed-phase weekly aggregation must be resolved before RUSH-022/037 calculations, and employment/meeting/overtime rules validated before payroll use, per ADR 0017.
+3. `RUSH-015/037`: calendar policy resolved in ADR 0015; mixed-phase weekly calendar-day proration and deduplicated planning hours resolved with owner approval in ADR 0022. RUSH-017 stores configurable hour inputs without legal defaults. Employment/meeting/overtime rules still require validation before payroll use, per ADR 0017.
 4. `RUSH-019`: resolved with owner approval in [ADR 0019](decisions/0019-ranger-preference-profiles.md): weekly profiles inherit unspecified fields dynamically from the default; explicit neutral values override it.
 5. `RUSH-027`: released team-draft visibility for Rangers.
 6. `RUSH-020`: resolved with owner approval in [ADR 0020](decisions/0020-one-off-events.md): when scheduled-shift counting is enabled, count scheduled Rangers across all areas. Event staffing and area coverage remain independent.
