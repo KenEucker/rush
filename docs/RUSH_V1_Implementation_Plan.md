@@ -435,6 +435,31 @@ generation input snapshots; RUSH-037–042 retain timesheet/meeting-pay integrat
 and the complete scenario. All nine acceptance scenario owners remain unchanged.
 Human review, required CI and merge remain necessary for task completion.
 
+### RUSH-021 implementation evidence
+
+RUSH-001–020 are merged prerequisites on production, including the Milestone 2
+offline conflict gate. RUSH-021 integrates the existing Orchid and Quasar
+configuration interfaces through a production-PWA desktop/mobile journey: one
+season, low-staff shared and 24/7 dedicated phases, distinct hour policies,
+one paid Monday Meeting, and Ranger offline availability/weekly preferences.
+The journey verifies validation with retained input, denied Ranger configuration
+reads/writes, both command types surviving reload in the centralized Dexie queue,
+Server reconciliation, acknowledgment, inherited preferences and next-week
+defaults. A notice acknowledgment now preserves the selected Management year,
+including future years, with list/record Server regression tests.
+Accepted unavailability changes event staffing evaluation while keeping
+attendance and phase coverage intact. `npm run client:test:configuration` runs
+the integrated and focused Milestone 3 browser regressions.
+
+See [verification and requirements map](evidence/RUSH-021/README.md).
+No new schema, sync protocol, UI framework or product policy is introduced.
+Local, Docker and development-Compose Artisan helpers cover migration, cache
+maintenance and operational commands; generic runners support all commands.
+R-04/R-05 generation, gaps and recommendations stay with RUSH-022–025/040;
+the nine complete acceptance-scenario owners remain unchanged. This provides
+Milestone 3 integration evidence, not release acceptance. Human review, required
+CI and merge remain necessary for task and milestone completion.
+
 ## 6. Milestone 4 — Schedule generation (RUSH-022–028)
 
 **Deliverable:** The deterministic planning engine produces inspectable, editable drafts and publishes correctly, including when coverage is incomplete.

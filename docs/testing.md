@@ -1,5 +1,32 @@
 # Testing RUSH
 
+## Configuration integration (RUSH-021)
+
+After building, migrating and seeding the production-PWA fixture below (including
+`php tests/Fixtures/seed-management-years.php` inside its Server container), run
+`npm run client:test:configuration` from the repository root. This runs the
+Milestone 3 journey and the season, coverage, policy, availability, preference,
+event and management-year regression suites on desktop and mobile.
+
+`configuration.spec.ts` creates one season through Orchid with limited shared
+coverage and three contiguous eight-hour dedicated shifts for a 24/7 phase,
+distinct weekly targets, and one paid Monday Meeting. It rejects invalid policy
+inputs and Ranger access to configuration, then saves Ranger unavailability and
+weekly preferences into the same offline queue across reloads. After reconnect,
+Management acknowledges the report and the meeting excludes the unavailable
+attendee from staffing without removing attendance or changing area coverage.
+The weekly preference inherits default hours and returns to defaults next week.
+Screenshots are attached to the Playwright report.
+
+The test uses an upcoming season so year-archive rules remain active. Configuration
+is performed through actual UI controls; API reads verify independent records
+and denied API writes verify authorization. No operational data or network
+responses are mocked. Existing focused suites retain revision-conflict, audit,
+time-zone and multi-device coverage. The full `npm run client:test:e2e` also
+includes the mandatory Milestone 2 production-PWA offline/conflict regression gate.
+See [RUSH-021 evidence](evidence/RUSH-021/README.md) for executed results and the
+R-01–R-11 evidence map; R-04/R-05 generation and gap behavior retain their later owners.
+
 ## Preference profiles (RUSH-019)
 
 Run Server `php vendor/bin/pest --filter=Preference --compact` against disposable

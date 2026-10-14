@@ -107,6 +107,6 @@ class UnavailabilityScreen extends ManagementScreen
         }
         Toast::success('Acknowledged as seen. Assignments and coverage still need separate review.');
 
-        return redirect()->route('platform.unavailability', [$organization->id, $report]);
+        return redirect(app(ManagementYear::class)->route('platform.unavailability', [$organization->id, $report]));
     }
 }
