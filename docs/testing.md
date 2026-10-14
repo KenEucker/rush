@@ -186,6 +186,7 @@ Run from the repository root:
 docker compose -p rush-ci -f docker/compose.ci.yaml up -d --build --wait --wait-timeout 120
 docker compose -p rush-ci -f docker/compose.ci.yaml exec -T server php artisan migrate --force
 docker compose -p rush-ci -f docker/compose.ci.yaml exec -T server php artisan db:seed --force
+docker compose -p rush-ci -f docker/compose.ci.yaml exec -T server php tests/Fixtures/seed-management-years.php
 npm run client:test:e2e
 docker compose -p rush-ci -f docker/compose.ci.yaml down --volumes --remove-orphans
 ```
@@ -194,6 +195,19 @@ Always run the final cleanup, even if a command fails. To rerun tests immediatel
 against the same disposable fixture, clear its login counters with `docker compose
 -p rush-ci -f docker/compose.ci.yaml exec -T server php artisan cache:clear`.
 The real limiter remains enabled during each test run.
+
+Before reporting a PR verified, run the full browser suite against a fresh fixture
+after the final code change, then check all GitHub CI jobs on the pushed commit.
+Focused reruns help diagnose failures but do not replace a green full run. Rebuild
+the fixture after application changes; recreate its temporary database before
+repeating the full suite because tests create durable Server records.
+
+Offline write/reload tests must observe the saved pending record before reloading,
+then assert the same record and content after reload. A completed Playwright click
+does not await an asynchronous Dexie transaction. Keep retries disabled and wait
+on visible application state rather than adding fixed delays. When navigation or
+headings change, run all affected browser suites and scope locators to the intended
+content or navigation region so duplicated menu links remain unambiguous.
 
 The suite asserts real Ranger/Management login, authorization differences,
 same-origin Orchid and its stylesheet, CSRF rejection, private profile access,

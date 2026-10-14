@@ -269,10 +269,16 @@ test('Milestone 3: configure a season and reconcile Ranger inputs across coverag
       await page.keyboard.press('Escape');
       await choosePreference(page, 'Days off preference', 'Separated days off');
       await page.getByRole('button', { name: 'Save preferences', exact: true }).click();
+      // A click does not await the Dexie transaction. Reload only after the UI
+      // confirms the pending write, then verify that exact record survived.
+      const pendingWeek = page.getByTestId('preference-entry').filter({ hasText: 'Pending —' });
+      await expect(pendingWeek).toContainText('Days off: separated');
+      const preferenceId = await pendingWeek.getAttribute('data-record-id');
+      expect(preferenceId).toBeTruthy();
       await page.reload();
-      await expect(
-        page.getByTestId('preference-entry').filter({ hasText: 'Pending —' }),
-      ).toContainText('Days off: separated');
+      const reloadedWeek = page.locator(`[data-record-id="${preferenceId}"]`);
+      await expect(reloadedWeek).toContainText('Pending — saved on this device');
+      await expect(reloadedWeek).toContainText('Days off: separated');
       await page.goto('/availability');
       await expect(
         page.getByTestId('availability-entry').filter({ hasText: 'Pending —' }),

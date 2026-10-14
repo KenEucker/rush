@@ -92,6 +92,46 @@ year would always be empty. The year-navigation test now verifies future-year
 creation through the menu with the selected year preserved, for both empty and
 populated years. Failures were investigated and fixed, not retried away.
 
+## CI failure follow-up
+
+PR #22's initial CI run [38500286263](https://github.com/KenEucker/rush/actions/runs/38500286263)
+finished with **45 browser tests passed, 1 failed**. The mobile configuration
+journey reloaded immediately after clicking Save preferences, before observing
+the durable pending write. Its trace starts reload less than one millisecond
+after the click completes; the failure snapshot contains only the availability
+command and the previously synced default preference. The test now waits for
+the pending weekly record, captures its ID, and checks that exact record's
+pending status and content after reload. Retries remain zero; no fixed sleep,
+mock or weaker assertion was added.
+
+Review of the last five PRs found different failure causes, rather than one
+shared CI outage:
+
+- #21: duplicated navigation links made broad locators ambiguous (run
+  `38464791353`), then changed headings broke old assertions (`38492864679`).
+  Those fixes were already present; final run `38494850861` passed.
+- #19: development-stack checks failed during live-development setup and worker
+  retirement. The navigation-race fix and its evidence are in `docs/testing.md`;
+  final run `38451646850` passed.
+- #18 and #20: their available branch CI runs `38430461296` and `38446715046`
+  passed.
+
+The earlier local focused reruns did not establish that the final full suite or
+PR CI was green. `docs/testing.md` now explicitly requires both a fresh full
+browser run and checking CI on the pushed commit before reporting verification.
+Its fixture instructions now include the historical-year seed already used by CI.
+
+Follow-up validation after the fix:
+
+- Fresh production-PWA Docker build, migrations, normal seed and historical-year
+  seed: **passed**.
+- `npm run client:test:e2e`: **46 passed in 8.7 minutes**, desktop and mobile,
+  with zero retries, in one complete run after the final test change.
+- `npm run client:lint`, `npm run client:typecheck`: **passed**.
+- `npm run conventions:test`: **8 passed** with normal filesystem access (the
+  initial sandbox run could not create its temporary Git repository).
+- `git diff --check`: **passed**.
+
 ## Operations and remaining gates
 
 The root package adds development-Compose migration/status/rollback/seed and cache
