@@ -12,11 +12,13 @@ class PlanningConstraints
     public function evaluate(array $inputs, array $input): array
     {
         $v = Validator::make($input, [
-            'candidates' => ['required', 'array', 'list', 'max:1000'],
-            'candidates.*' => ['required', 'array:membership_id,opportunity_id,override_reason'],
+            'candidates' => ['present', 'array', 'list', 'max:1000'],
+            'candidates.*' => ['required', 'array:membership_id,opportunity_id,override_reason,starts_at,ends_at'],
             'candidates.*.membership_id' => ['required', 'uuid'],
             'candidates.*.opportunity_id' => ['required', 'string'],
             'candidates.*.override_reason' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'candidates.*.starts_at' => ['required_with:candidates.*.ends_at', 'date_format:Y-m-d\TH:i:s\Z'],
+            'candidates.*.ends_at' => ['required_with:candidates.*.starts_at', 'date_format:Y-m-d\TH:i:s\Z'],
         ])->validate();
         $proposals = [];
         $results = [];
@@ -30,6 +32,14 @@ class PlanningConstraints
             }
             if (! $opportunity) {
                 $hard[] = 'unknown_opportunity';
+            }
+            if ($opportunity && isset($candidate['starts_at'], $candidate['ends_at'])) {
+                if ($candidate['starts_at'] < $opportunity['starts_at'] || $candidate['ends_at'] > $opportunity['ends_at']
+                    || $candidate['ends_at'] <= $candidate['starts_at']
+                    || ($opportunity['kind'] === 'event' && ($candidate['starts_at'] !== $opportunity['starts_at'] || $candidate['ends_at'] !== $opportunity['ends_at']))) {
+                    $hard[] = 'invalid_partial_interval';
+                }
+                $opportunity = [...$opportunity, 'starts_at' => $candidate['starts_at'], 'ends_at' => $candidate['ends_at']];
             }
             $key = $candidate['membership_id'].':'.$candidate['opportunity_id'];
             if (isset($seen[$key])) {

@@ -6,8 +6,10 @@ use App\Models\Organization;
 use App\Orchid\ManagementYear;
 use App\Services\Events\EventConfiguration;
 use App\Services\Scheduling\PlanningInputs;
+use App\Services\Scheduling\ScheduleDrafts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\Input;
 use Orchid\Support\Facades\Layout;
@@ -34,7 +36,9 @@ class PlanningInputScreen extends ManagementScreen
         $this->offsetKeys = array_values(array_unique([...array_keys($record['inputs']['parameters']['offsets'] ?? []),
             ...array_column(array_filter($record['inputs']['issues'] ?? [], fn ($issue) => $issue['code'] === 'invalid_shift_time'), 'key')]));
 
-        return ['planning' => $record, 'season' => $calendar,
+        return ['planning' => $record, 'season' => $calendar, 'organization' => $organization,
+            'drafts' => DB::table('schedule_drafts')->join('planning_inputs', 'planning_inputs.id', '=', 'schedule_drafts.planning_input_id')
+                ->where('planning_inputs.season_id', $season)->orderByDesc('schedule_drafts.created_at')->select('schedule_drafts.*')->get(),
             'configuration' => $record ? $record['inputs']['parameters'] : ['starts_on' => $calendar->starts_on, 'ends_on' => $calendar->ends_on, 'minimum_rest_minutes' => 480]];
     }
 
@@ -66,5 +70,15 @@ class PlanningInputScreen extends ManagementScreen
         $record = $service->capture($request->user(), $organization, $season, $input);
 
         return redirect()->route('platform.planning-inputs', [$organization->id, $season, 'snapshot' => $record['id']]);
+    }
+
+    public function generate(Request $request, Organization $organization, string $season, ScheduleDrafts $service): RedirectResponse
+    {
+        $request->validate(['snapshot_id' => ['required', 'uuid']]);
+        $snapshot = app(PlanningInputs::class)->read($request->user(), $organization, (string) $request->input('snapshot_id'));
+        abort_unless($snapshot['inputs']['season']['id'] === $season, 404);
+        $record = $service->generate($request->user(), $organization, $snapshot['id'], ['reason' => 'Generate proposals from planning snapshot: '.$snapshot['id']]);
+
+        return redirect()->route('platform.drafts', [$organization->id, $season, $record['id']]);
     }
 }

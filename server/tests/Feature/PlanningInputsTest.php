@@ -233,10 +233,13 @@ it('keeps zero caps distinct from missing policy and allows no silent relaxation
 });
 
 it('round-trips its migration and enforces tenant linkage', function () {
+    $drafts = require database_path('migrations/2026_10_15_000001_create_schedule_drafts.php');
+    $drafts->down();
     $migration = require database_path('migrations/2026_10_14_000001_create_planning_inputs_table.php');
     $migration->down();
     expect(Schema::hasTable('planning_inputs'))->toBeFalse();
     $migration->up();
+    $drafts->up();
     $record = ($this->capture)();
     $foreign = OrganizationMembership::factory()->create();
     expect(fn () => DB::transaction(fn () => DB::table('planning_inputs')->where('id', $record['id'])->update(['organization_id' => $foreign->organization_id])))
