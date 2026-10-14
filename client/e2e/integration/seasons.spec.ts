@@ -26,7 +26,13 @@ test('Management configures seasons and phases with validation and stale-edit re
   const identity = (await (await context.request.get('/api/v1/session')).json()) as SessionIdentity;
   const organization = identity.memberships[0]!.organization.id;
   await page.goto('/admin/main');
-  await page.getByRole('link', { name: /Seasons and phases —/ }).click();
+  if (!(await page.locator('#headerMenuCollapse').isVisible()))
+    await page.locator('.header-toggler').click();
+  await page.getByRole('link', { name: 'Seasons and phases', exact: true }).click();
+  await page
+    .locator('#menu-seasons-and-phases')
+    .getByRole('link', { name: /Create season/ })
+    .click();
   await page
     .getByLabel('Season name', { exact: false })
     .fill('Calendar proof ' + test.info().project.name);
@@ -112,7 +118,13 @@ test('New phase dates follow calendar boundaries without changing existing input
   page,
 }) => {
   await page.goto('/admin/main');
-  await page.getByRole('link', { name: /Seasons and phases —/ }).click();
+  if (!(await page.locator('#headerMenuCollapse').isVisible()))
+    await page.locator('.header-toggler').click();
+  await page.getByRole('link', { name: 'Seasons and phases', exact: true }).click();
+  await page
+    .locator('#menu-seasons-and-phases')
+    .getByRole('link', { name: /Create season/ })
+    .click();
   const seasonStart = page.getByLabel('Season starts on', { exact: false });
   const seasonEnd = page.getByLabel('Season ends on (inclusive)', { exact: false });
   const starts = page.getByLabel('Phase starts on', { exact: true });
@@ -165,7 +177,13 @@ test('End-date pickers begin after their start and enforce the minimum without o
   page,
 }) => {
   await page.goto('/admin/main');
-  await page.getByRole('link', { name: /Seasons and phases —/ }).click();
+  if (!(await page.locator('#headerMenuCollapse').isVisible()))
+    await page.locator('.header-toggler').click();
+  await page.getByRole('link', { name: 'Seasons and phases', exact: true }).click();
+  await page
+    .locator('#menu-seasons-and-phases')
+    .getByRole('link', { name: /Create season/ })
+    .click();
   const seasonStart = page.getByLabel('Season starts on', { exact: false });
   const seasonEnd = page.getByLabel('Season ends on (inclusive)', { exact: false });
   const starts = page.getByLabel('Phase starts on', { exact: true });

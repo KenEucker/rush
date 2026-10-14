@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\MemberProfileController;
 use App\Http\Controllers\OfficialAssignmentController;
 use App\Http\Controllers\PhaseCoverageController;
@@ -11,6 +12,9 @@ use App\Http\Controllers\UnavailabilityController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/organizations/{organization}/seasons/{season}/events', [EventController::class, 'index']);
+    Route::get('/organizations/{organization}/seasons/{season}/events/{event}', [EventController::class, 'show']);
+    Route::put('/organizations/{organization}/seasons/{season}/events/{event}', [EventController::class, 'save'])->middleware('throttle:120,1');
     Route::get('/organizations/{organization}/unavailability', [UnavailabilityController::class, 'index']);
     Route::put('/organizations/{organization}/unavailability/{report}', [UnavailabilityController::class, 'save'])->middleware('throttle:120,1');
     Route::post('/organizations/{organization}/unavailability/{report}/acknowledge', [UnavailabilityController::class, 'acknowledge'])->middleware('throttle:120,1');

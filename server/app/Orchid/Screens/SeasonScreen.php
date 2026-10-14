@@ -5,6 +5,7 @@ namespace App\Orchid\Screens;
 use App\Exceptions\RevisionConflict;
 use App\Models\Organization;
 use App\Models\Season;
+use App\Orchid\ManagementYear;
 use App\Services\Seasons\SaveSeason;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,11 +16,10 @@ use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Matrix;
 use Orchid\Screen\Fields\Select;
-use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
-class SeasonScreen extends Screen
+class SeasonScreen extends ManagementScreen
 {
     public function name(): ?string
     {
@@ -38,7 +38,7 @@ class SeasonScreen extends Screen
 
         return [
             'organization' => $organization,
-            'seasons' => Season::query()->where('organization_id', $organization->id)->with('phases')->orderBy('starts_on')->paginate(15),
+            'seasons' => app(ManagementYear::class)->scopeSeasons(Season::query()->where('organization_id', $organization->id))->with('phases')->orderBy('starts_on')->paginate(15)->withQueryString(),
             'configuration' => $record ? [...$record->only(['id', 'name', 'starts_on', 'ends_on', 'timezone', 'week_starts_on']),
                 'expected_revision' => $record->revision, 'phases' => $record->phases->map(fn ($phase) => $phase->only(['id', 'name', 'starts_on', 'ends_on']))->all()]
                 : ['id' => (string) Str::uuid(), 'expected_revision' => null, 'phases' => []],
@@ -47,11 +47,19 @@ class SeasonScreen extends Screen
 
     public function commandBar(): iterable
     {
+        if (app(ManagementYear::class)->context()['readOnly']) {
+            return [];
+        }
+
         return [Button::make('Save season and phases')->method('save')->icon('bs.check-circle')];
     }
 
     public function layout(): iterable
     {
+        if (app(ManagementYear::class)->context()['readOnly'] && request()->route('season') === 'new') {
+            return [Layout::view('admin.seasons')];
+        }
+
         return [
             Layout::view('admin.seasons'),
             Layout::rows([

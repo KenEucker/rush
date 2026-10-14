@@ -65,7 +65,7 @@ test('Management configures hour policies and desirability overrides with retain
   });
   expect(coverage.status()).toBe(200);
   await page.goto(`/admin/organizations/${organization}/seasons/${seasonId}`);
-  await page.locator(`a[href$="/phases/${phase}/policies"]`).click();
+  await page.locator('#post-form').locator(`a[href$="/phases/${phase}/policies"]`).click();
   await expect(page.getByText('Policies need configuration or review.').first()).toBeVisible();
   await page.getByLabel('Weekly scheduling target (minutes)', { exact: false }).fill('1920');
   await page.getByLabel('Weekly planned cap (minutes)', { exact: false }).fill('1440');

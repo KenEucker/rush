@@ -7,6 +7,8 @@ use App\Exceptions\RevisionConflict;
 use App\Models\OrganizationMembership;
 use App\Models\Unavailability;
 use App\Models\User;
+use App\Services\Seasons\ConfigurationYear;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -42,6 +44,14 @@ class SaveUnavailability
                 'ends_at' => ['required', 'date_format:Y-m-d\TH:i:s\Z', 'after:starts_at'],
                 'reason' => $management ? ['required', 'string', 'max:500'] : ['sometimes', 'nullable', 'string', 'max:500'],
             ])->validate();
+            if ($management) {
+                $timezone = $currentMembership->organization->timezone;
+                $yearPolicy = app(ConfigurationYear::class);
+                if ($current) {
+                    $yearPolicy->assertDateEditable($current->starts_at->setTimezone($timezone)->toDateString(), $timezone);
+                }
+                $yearPolicy->assertDateEditable(CarbonImmutable::parse($validated['starts_at'])->setTimezone($timezone)->toDateString(), $timezone);
+            }
             if (($current?->revision) !== $revision) {
                 throw new RevisionConflict;
             }

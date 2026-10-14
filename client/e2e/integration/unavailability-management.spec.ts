@@ -76,7 +76,7 @@ test('Management acknowledges offline reports and edits on behalf without repair
     });
     expect(assignment.ok()).toBe(true);
     await admin.goto('/admin/main');
-    await admin.getByRole('link', { name: /Unavailability notices/ }).click();
+    await admin.getByRole('link', { name: 'Review notices' }).click();
     const notice = admin.locator(`[data-record-id="${id}"]`);
     await expect(notice).toContainText('Affected coverage gap needs review');
     await notice.getByRole('button', { name: 'Acknowledge as seen' }).click();
@@ -138,7 +138,7 @@ test('Management acknowledges offline reports and edits on behalf without repair
     await expect(row).toContainText('Awaiting Management acknowledgment.');
     // Management also creates a new audited range using the same editor/service.
     await admin.getByRole('link', { name: 'Add unavailability on behalf of a Ranger' }).click();
-    await expect(admin).toHaveURL(/\/unavailability\/new$/);
+    await expect(admin).toHaveURL(/\/unavailability\/new\?year=\d{4}$/);
     await expect(admin.getByLabel('Start (UTC)', { exact: false })).toHaveValue('');
     await admin.locator('.ts-control').click();
     await admin

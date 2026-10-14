@@ -47,6 +47,10 @@ class SaveSeason
             ])->validate();
             $season = Season::query()->lockForUpdate()->find($id);
             abort_if($season && $season->organization_id !== $organization->id, 404);
+            if ($season) {
+                app(ConfigurationYear::class)->assertSeasonEditable($season);
+            }
+            app(ConfigurationYear::class)->assertDateEditable($values['starts_on'], $values['timezone']);
             $revision = $values['expected_revision'] === null ? null : (int) $values['expected_revision'];
             if ($season?->revision !== $revision) {
                 throw new RevisionConflict;

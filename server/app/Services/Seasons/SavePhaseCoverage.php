@@ -23,6 +23,7 @@ class SavePhaseCoverage
             $phase = $this->coverage->phase($actor, $organization, $id);
             Organization::query()->whereKey($organization->id)->lockForUpdate()->firstOrFail();
             $season = Season::query()->lockForUpdate()->findOrFail($phase->season_id);
+            app(ConfigurationYear::class)->assertSeasonEditable($season);
             $values = Validator::make($input, [
                 'expected_revision' => ['present', 'nullable', 'integer', 'between:1,2147483646'],
                 'expected_season_revision' => ['required', 'integer', 'min:1'],

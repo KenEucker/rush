@@ -20,20 +20,23 @@
 </style>
 <div class="bg-white rounded p-4 mb-3" data-controller="season-phase-defaults">
     <h2 class="h5">{{ $organization->name }}</h2>
-    <a href="{{ route('platform.seasons', [$organization->id, 'new']) }}">Create a new season</a>
+    @unless(app(\App\Orchid\ManagementYear::class)->context()['readOnly'])
+        <a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.seasons', [$organization->id, 'new']) }}">Create a new season</a>
+    @endunless
     <ul class="mt-3">
         @forelse($seasons as $item)
             <li class="mb-2">
-                <a href="{{ route('platform.seasons', [$organization->id, $item->id]) }}">{{ $item->name }}</a>
+                <a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.seasons', [$organization->id, $item->id]) }}">{{ $item->name }}</a>
                 <div class="text-muted">
                     {{ \Carbon\CarbonImmutable::parse($item->starts_on, 'UTC')->format('D, M j, Y') }}
                     through {{ \Carbon\CarbonImmutable::parse($item->ends_on, 'UTC')->format('D, M j, Y') }}
                     · {{ $item->timezone }} · {{ $item->phases->count() }} phases · Revision {{ $item->revision }}
                 </div>
                 <ul>
+                    <li><a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.events', [$organization->id, $item->id, 'new']) }}">Configure one-off events and attendance</a></li>
                     @foreach($item->phases as $phase)
-                        <li><a href="{{ route('platform.phase-coverage', [$organization->id, $phase->id]) }}">Configure shifts and coverage — {{ $phase->name }}</a></li>
-                        <li><a href="{{ route('platform.phase-policies', [$organization->id, $phase->id]) }}">Configure scheduling policies — {{ $phase->name }}</a></li>
+                        <li><a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.phase-coverage', [$organization->id, $phase->id]) }}">Configure shifts and coverage — {{ $phase->name }}</a></li>
+                        <li><a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.phase-policies', [$organization->id, $phase->id]) }}">Configure scheduling policies — {{ $phase->name }}</a></li>
                     @endforeach
                 </ul>
             </li>

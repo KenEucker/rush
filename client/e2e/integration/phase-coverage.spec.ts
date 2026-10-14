@@ -57,7 +57,7 @@ test('Management configures dedicated and shared phase coverage with validation 
     await field.locator('.ts-dropdown').getByText(name, { exact: true }).click();
   };
   await page.goto(`/admin/organizations/${organization}/seasons/${seasonId}`);
-  await page.locator(`a[href$="/phases/${phases[0]!.id}/coverage"]`).click();
+  await page.locator('#post-form').locator(`a[href$="/phases/${phases[0]!.id}/coverage"]`).click();
   await expect(page).toHaveURL(new RegExp(`/phases/${phases[0]!.id}/coverage$`));
   await expect(page.locator('select[name="configuration[model]"]')).toHaveCount(0);
   await page.getByRole('link', { name: 'Add staffing requirement', exact: true }).click();

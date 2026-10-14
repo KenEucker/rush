@@ -28,7 +28,7 @@ it('notifies Management and syncs revision-specific acknowledgment without repai
     $this->actingAs($this->manager->user)->putJson($this->url, $this->input)->assertSuccessful()
         ->assertJsonPath('data.acknowledged_at', null)->assertJsonPath('data.assignment_conflicts.0.affected_coverage.starts_at', '2026-11-01T10:00:00Z')
         ->assertJsonPath('data.assignment_conflicts.0.affected_coverage.ends_at', '2026-11-01T12:00:00Z');
-    $this->get('/admin/main')->assertOk()->assertSee('1 need acknowledgment');
+    $this->get('/admin/main')->assertOk()->assertSee('1 notices need acknowledgment.');
     $this->getJson($this->base.'/unavailability')->assertOk()->assertJsonCount(1, 'data');
     $page = $this->actingAs($this->ranger->user)->postJson($this->base.'/sync/pull')->assertOk()->json();
     $this->actingAs($this->manager->user)->postJson($this->url.'/acknowledge', ['expected_revision' => 1])->assertOk();
@@ -36,7 +36,7 @@ it('notifies Management and syncs revision-specific acknowledgment without repai
     $at = DB::table('unavailability_acknowledgments')->value('acknowledged_at');
     $this->postJson($this->url.'/acknowledge', ['expected_revision' => 1])->assertOk();
     expect(DB::table('unavailability_acknowledgments')->value('acknowledged_at'))->toBe($at);
-    $this->get('/admin/main')->assertSee('0 need acknowledgment');
+    $this->get('/admin/main')->assertSee('No unacknowledged notices in this year.');
     $this->actingAs($this->ranger->user, 'sanctum')->postJson($this->base.'/sync/pull', ['checkpoint' => $page['checkpoint']])
         ->assertOk()->assertJsonPath('changes.0.value.revision', 1)->assertJsonCount(1, 'changes.0.value.assignment_conflicts')
         ->assertJsonPath('changes.0.value.acknowledged_at', fn ($value) => is_string($value));

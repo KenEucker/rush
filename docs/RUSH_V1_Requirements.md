@@ -39,6 +39,12 @@ Each staffing row selects one shift and exactly one dedicated area or shared gro
 
 **R-06 Events and meetings.** Management creates individual dated events, including a paid event such as “Monday Meeting.” There is **no recurrence feature**. An event can specify staffing targets (number or percentage), and management decides whether already-scheduled shifts count or whether additional assignments are necessary. Event hours contribute to weekly scheduling and timesheets; ordinary area coverage and event staffing must be evaluated independently.
 
+Management configuration archive (owner-approved October 13, 2026; R-01/R-06):
+provide a year selector and scope navigation by season starting year. A season
+spanning years belongs only to its starting year. Once that year is past in its
+season time zone, its season/phase configuration and events are read-only,
+including through APIs. Preserve access to historical records. See ADR 0020.
+
 ## 3. Ranger availability and preferences
 
 **R-07 Unavailability.** Rangers mark periods when they **cannot work**; all other time is potentially schedulable. Unavailability is distinct from preferences and must be prominently considered by the scheduler. Management receives a notice and can acknowledge it so the Ranger knows it was seen. Acknowledgment does not mean the affected schedule has been repaired.
@@ -148,7 +154,7 @@ These points were **not fully decided** and should be settled during technical d
 - Calendar portion resolved in RUSH-015 with owner approval (October 10, 2026): explicit IANA season time zone, configurable week-start weekday at local midnight, and actual elapsed intervals split at local week/phase boundaries. Nonexistent DST wall times are rejected; repeated wall times require an explicit UTC offset. See [ADR 0015](decisions/0015-season-calendar-policy.md). RUSH-017's owner-approved scope stores weekly target, planned cap and separate planned/actual warning thresholds without legal defaults. Mixed-phase aggregation remains a RUSH-022/037 prerequisite, and applicable employment/meeting-pay validation remains required before payroll use; see ADR 0017.
 - Resolved for RUSH-019 with owner approval (October 13, 2026): weekly profiles inherit unspecified fields from the current default; explicit neutral values override it. See [ADR 0019](decisions/0019-ranger-preference-profiles.md).
 - What Rangers can see of a released **team-wide draft** versus only their own draft assignments.
-- How shifts are counted toward special-event percentage staffing when working in a different coverage area.
+- Resolved for RUSH-020 with owner approval (October 13, 2026): when Management enables scheduled-shift counting for an event, scheduled Rangers across all areas count toward the event target. See [ADR 0020](decisions/0020-one-off-events.md).
 - Whether the nine-hour finished-action window means elapsed time from shift start; ensure it cannot restrict real hours reporting.
 - Authentication, offline behavior, hosting, retention, privacy controls, export field schemas, and integration credentials.
 - Whether free-text scheduling intent is included in V1. The desired conversational scheduling policy is documented conceptually, but a structured, inspectable objective model is sufficient initially.

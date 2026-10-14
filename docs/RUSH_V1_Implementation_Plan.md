@@ -296,7 +296,7 @@ human review and merge remain necessary for task and milestone completion.
 | **RUSH-017** Scheduling policies | Phase-specific hour targets/planned caps/overtime warnings and shift desirability baseline; document exact classification scope and labor-policy validation dependencies. | R-09, R-11, R-29 |
 | **RUSH-018** Complete unavailability workflow | Extend proof slice: create/edit time spans online/offline; Management edits on behalf with audit; notices and acknowledgments, affected-assignment/gap flags; acknowledge does not repair schedule. | R-07, R-08 |
 | **RUSH-019** Ranger preference profiles | Default profile, week-scoped field overrides with unspecified fields inherited from the current default (owner-approved ADR 0019), preferred shifts, weekly desired hours, consecutive/separated days-off preference; return to default next week; editable offline. | R-09, R-10 |
-| **RUSH-020** One-off events and paid attendance | Dated, nonrecurring events, paid attendance assignments, number/percentage targets, choice whether scheduled shifts count, independent coverage/event evaluation. Resolve event-counting rule. | R-06 |
+| **RUSH-020** One-off events and paid attendance | Dated, nonrecurring events, paid attendance assignments, number/percentage targets, choice whether scheduled shifts count, independent coverage/event evaluation. Resolve event-counting rule. Owner-approved follow-up: Management year navigation and read-only past starting years. | R-01, R-06 |
 | **RUSH-021** Configuration UI and tests | End-to-end phase/coverage/availability/preferences/event configuration with management and Ranger interfaces, permissions, validation, and sync tests. | R-01–R-11 |
 
 **Milestone demonstration:** Configure a low-staff phase and a 24/7 phase with distinct models, Ranger availability and preference overrides, and a single Monday Meeting without recurrence.
@@ -408,6 +408,33 @@ conflict recovery. RUSH-022/027 retain draft input snapshots, lifecycle edit gua
 and staleness; RUSH-024 retains fairness weights. All nine full acceptance-scenario
 owners remain unchanged. Human review, required CI and merge remain necessary.
 
+### RUSH-020 implementation evidence
+
+RUSH-001–019 are merged prerequisites on production, including the Milestone 2
+offline conflict gate. RUSH-020 implements R-06 event configuration and explicit
+paid attendance using shared Management-only Orchid/API services, revision
+checks, transactional actor-attributed history, and tenant-constrained records.
+The owner approved counting scheduled Rangers across all coverage areas when
+enabled for an event. Number/percentage targets are evaluated per interval,
+deduplicating Rangers and excluding unavailable/inactive contributions while
+preserving assignments and ordinary area coverage independently.
+See [ADR 0020](decisions/0020-one-off-events.md),
+[contract](contracts/events.md), and [evidence](evidence/RUSH-020/README.md).
+Pest covers permissions, validation, DST/week boundaries, rollback, constraints,
+and concurrent managers. Playwright exercises the form on desktop/mobile,
+save/reload, paid attendance, validation, and retained conflicting input.
+
+Owner-approved RUSH-020 follow-up: Management year selector and navigation
+scoped to season starting year (R-01/R-06). Past starting years lock the entire
+season, even across New Year, with shared-service/API enforcement. Evidence:
+`ManagementYearTest.php` and `management-years.spec.ts` cover historical views,
+backdating rejection, time-zone boundaries, authorization and independent tabs.
+Administration remains online; no Dexie schema or sync protocol change.
+Scenario 6 gains event/attendance configuration evidence. RUSH-022/023 retain
+generation input snapshots; RUSH-037–042 retain timesheet/meeting-pay integration
+and the complete scenario. All nine acceptance scenario owners remain unchanged.
+Human review, required CI and merge remain necessary for task completion.
+
 ## 6. Milestone 4 — Schedule generation (RUSH-022–028)
 
 **Deliverable:** The deterministic planning engine produces inspectable, editable drafts and publishes correctly, including when coverage is incomplete.
@@ -478,7 +505,7 @@ The following is the authoritative task assignment index. Several requirements s
 
 | Requirement | Primary task(s) |
 |---|---|
-| R-01 Season and phases | 015, 021 |
+| R-01 Season and phases | 015, 020 (year archive), 021 |
 | R-02 Configurable shifts | 016, 023 |
 | R-03 Coverage model | 016, 025 |
 | R-04 Gaps | 025, 040 |
@@ -540,7 +567,7 @@ Resolve and document these **before** completing their owner task. They remain o
 3. `RUSH-015/037`: calendar policy resolved with owner approval in [ADR 0015](decisions/0015-season-calendar-policy.md). RUSH-017 stores configurable hour inputs without legal defaults. Mixed-phase weekly aggregation must be resolved before RUSH-022/037 calculations, and employment/meeting/overtime rules validated before payroll use, per ADR 0017.
 4. `RUSH-019`: resolved with owner approval in [ADR 0019](decisions/0019-ranger-preference-profiles.md): weekly profiles inherit unspecified fields dynamically from the default; explicit neutral values override it.
 5. `RUSH-027`: released team-draft visibility for Rangers.
-6. `RUSH-020`: whether cross-area scheduled shifts count toward percentage event attendance targets.
+6. `RUSH-020`: resolved with owner approval in [ADR 0020](decisions/0020-one-off-events.md): when scheduled-shift counting is enabled, count scheduled Rangers across all areas. Event staffing and area coverage remain independent.
 7. `RUSH-036`: exact Finished convenience window; it may never gate later accurate hours reporting.
 8. `RUSH-004/008/044/046/048`: retention, privacy, authentication details, integration credential storage, export schema choices; technical specification already fixes Sanctum, hosting, and offline mechanisms.
 9. `RUSH-022/024`: structured scheduling intent is sufficient in V1; free-text intent is optional only if explicitly approved.

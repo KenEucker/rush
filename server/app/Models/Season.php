@@ -22,4 +22,9 @@ class Season extends Model
     {
         return $this->hasMany(Phase::class)->orderBy('starts_on')->orderBy('id');
     }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(Event::class);
+    }
 }

@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\Unavailability;
 use App\Models\User;
+use App\Services\Seasons\ConfigurationYear;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -44,6 +45,8 @@ class ManageUnavailability
             // Same lock order as saves: actor, Ranger, report. Acknowledgment never edits the range.
             OrganizationMembership::query()->whereKey($report->organization_membership_id)->lockForUpdate()->firstOrFail();
             $report = Unavailability::query()->lockForUpdate()->findOrFail($id);
+            app(ConfigurationYear::class)->assertDateEditable(
+                $report->starts_at->setTimezone($organization->timezone)->toDateString(), $organization->timezone);
             if ($report->revision !== (int) $values['expected_revision']) {
                 throw new RevisionConflict;
             }

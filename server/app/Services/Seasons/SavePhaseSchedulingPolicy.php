@@ -23,7 +23,8 @@ class SavePhaseSchedulingPolicy
             OrganizationMembership::query()->where('organization_id', $organization->id)->where('user_id', $actor->id)->lockForUpdate()->first();
             $phase = $this->coverage->phase($actor, $organization, $id);
             Organization::query()->whereKey($organization->id)->lockForUpdate()->firstOrFail();
-            Season::query()->whereKey($phase->season_id)->lockForUpdate()->firstOrFail();
+            $season = Season::query()->whereKey($phase->season_id)->lockForUpdate()->firstOrFail();
+            app(ConfigurationYear::class)->assertSeasonEditable($season);
             $phase->refresh();
             $rules = [
                 'expected_revision' => ['present', 'nullable', 'integer', 'between:1,2147483646'],
