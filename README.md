@@ -264,6 +264,14 @@ Development aliases also cover `docker:dev:migrate:fresh`, `migrate:refresh`,
 prefix). Migration reset/refresh/fresh remove data; these aliases never add
 `--force`. `npm run server:test:planning` runs the RUSH-022 planning tests.
 
+Development aliases also cover inspection (`about`, `env`, `event:list`,
+`route:list`, `config:show`, `db:show`, `db:table`), `clear-compiled`, `cache:forget`,
+queue work/failed/retry/forget/clear/pruning, scheduler list/run/work/interrupt,
+`storage:link`, `up` and `down`, all prefixed with `docker:dev:`. Use `-- --help`
+to inspect each command. `npm run server:test:drafts` runs draft Server tests;
+`npm run client:test:drafts` runs desktop/mobile draft journeys against the
+disposable production-PWA fixture described in [testing](docs/testing.md).
+
 To return to built images:
 
 ```sh

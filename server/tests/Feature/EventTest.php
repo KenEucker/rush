@@ -218,6 +218,8 @@ it('prevents event identity reuse in another season and supports a zero-person r
 
 it('preserves existing seasons through event migration rollback and reapplication', function () {
     // Roll back dependent migrations first, as Artisan does in production.
+    $drafts = require database_path('migrations/2026_10_15_000001_create_schedule_drafts.php');
+    $drafts->down();
     $planning = require database_path('migrations/2026_10_14_000001_create_planning_inputs_table.php');
     $planning->down();
     $migration = require database_path('migrations/2026_10_13_220000_create_events.php');
@@ -226,6 +228,7 @@ it('preserves existing seasons through event migration rollback and reapplicatio
     $this->assertDatabaseHas('seasons', ['id' => $this->season->id, 'revision' => 1]);
     $migration->up();
     $planning->up();
+    $drafts->up();
     $this->actingAs($this->manager->user)->putJson($this->url, $this->input)->assertCreated();
 });
 

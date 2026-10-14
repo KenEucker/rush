@@ -3,6 +3,10 @@
     <p>Automatic proposals respect availability, overlapping work, weekly caps and minimum rest. Management overrides require a reason and retain visible conflicts. Published commitments are preserved. Coverage and event shortfalls stay visible; weekly fairness precedes season fairness and positive preferences.</p>
     <p>Weekly policies are prorated by phase calendar days divided by seven. Overlapping paid event and shift intervals count once. A partial planning range still uses full calendar-week commitments.</p>
     @if ($planning)
+        @if (! $planning['stale'] && ! app(\App\Orchid\ManagementYear::class)->context()['readOnly'])
+            <input type="hidden" name="snapshot_id" value="{{ $planning['id'] }}">
+            <button type="submit" formnovalidate="formnovalidate" formaction="{{ route('platform.planning-inputs', [$organization->id, $season->id, 'method' => 'generate']) }}" class="btn btn-primary mb-3">Generate editable draft</button>
+        @endif
         <h2 class="h4">Captured input review</h2>
         <p>Snapshot {{ $planning['id'] }} · {{ $planning['created_at'] }}</p>
         <div role="status" class="alert {{ $planning['stale'] ? 'alert-warning' : 'alert-info' }}">
@@ -54,4 +58,12 @@
         </details>
         <details><summary>Inspect immutable input sources and revisions</summary><pre class="text-wrap">{{ json_encode($planning['inputs'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre></details>
     @endif
+    <h2 class="h4">Saved drafts</h2>
+    <ul>
+        @forelse ($drafts as $draft)
+            <li><a href="{{ route('platform.drafts', [$organization->id, $season->id, $draft->id]) }}">Draft {{ $draft->created_at }} · revision {{ $draft->revision }}</a></li>
+        @empty
+            <li>No drafts generated for this season.</li>
+        @endforelse
+    </ul>
 </div>

@@ -494,6 +494,27 @@ RUSH-023–028 retain generation, scoring, gap accounting and publication. The n
 full acceptance scenario owners remain unchanged. Human review, CI and merge
 remain required.
 
+### RUSH-023 implementation evidence
+
+RUSH-001–022 are merged on production through `5878cfa`, including the mandatory
+offline gate. RUSH-023 adds online Management generation from current input
+snapshots, whole-shift/event proposals, partial/reassigned/removed draft work,
+persisted override reasons, revision checks and transactional before/after audit.
+Independent draft storage preserves official assignments and event attendance
+(R-02/R-06/R-12 and R-17's no-overwrite boundary). The shared API/Orchid services
+retain rejected form input, enforce tenant/current permissions and archive rules,
+and show interval demand separately for coverage and events.
+See [ADR 0023](decisions/0023-editable-schedule-drafts.md),
+[contract](contracts/schedule-drafts.md) and [verification](evidence/RUSH-023/README.md).
+Pest covers constraints, events, DST, partials, audit rollback and concurrent
+managers; Playwright covers desktop/mobile generation, edits, reload, conflict
+retention and removal. Development-Compose Artisan helpers supplement existing
+generic runners and migration/cache commands. No offline protocol/schema change.
+The deterministic feasibility order does not decide fairness scoring (RUSH-024).
+RUSH-025/027/028 retain gap accounting/recommendations, draft release and
+publication. Scenarios 1–2 and 6 gain proposal evidence; full scenario ownership
+and all release gates remain unchanged. Human review, CI and merge remain required.
+
 ## 7. Milestone 5 — Published schedule operations (RUSH-029–035)
 
 **Deliverable:** Rangers can view official team schedules, request mutually agreed changes, and share messages manually; management retains control over official assignments.
@@ -564,7 +585,7 @@ The following is the authoritative task assignment index. Several requirements s
 | R-14 Fairness rotation | 024 |
 | R-15 Fairness visibility | 026, 043 |
 | R-16 Draft release | 027 |
-| R-17 Rolling publication | 028 |
+| R-17 Rolling publication | 023 (preserve published records), 028 |
 | R-18 Publish despite conflicts | 028 |
 | R-19 Manager reminders | 028, 034 |
 | R-20 Replacement suggestions | 031 |

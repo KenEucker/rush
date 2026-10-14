@@ -6,6 +6,7 @@ use App\Http\Controllers\OfficialAssignmentController;
 use App\Http\Controllers\PhaseCoverageController;
 use App\Http\Controllers\PhaseSchedulingPolicyController;
 use App\Http\Controllers\PlanningInputController;
+use App\Http\Controllers\ScheduleDraftController;
 use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SyncController;
@@ -13,6 +14,9 @@ use App\Http\Controllers\UnavailabilityController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/organizations/{organization}/planning-inputs/{snapshot}/drafts', [ScheduleDraftController::class, 'store'])->whereUuid('snapshot')->middleware('throttle:30,1');
+    Route::get('/organizations/{organization}/drafts/{draft}', [ScheduleDraftController::class, 'show'])->whereUuid('draft');
+    Route::put('/organizations/{organization}/drafts/{draft}', [ScheduleDraftController::class, 'save'])->whereUuid('draft')->middleware('throttle:60,1');
     Route::post('/organizations/{organization}/seasons/{season}/planning-inputs', [PlanningInputController::class, 'store'])->middleware('throttle:30,1');
     Route::get('/organizations/{organization}/planning-inputs/{snapshot}', [PlanningInputController::class, 'show']);
     Route::post('/organizations/{organization}/planning-inputs/{snapshot}/evaluate', [PlanningInputController::class, 'evaluate'])->middleware('throttle:60,1');
