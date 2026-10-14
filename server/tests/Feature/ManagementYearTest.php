@@ -118,6 +118,23 @@ it('locks a cross-year season at midnight in its season time zone', function () 
     expect(app(ConfigurationYear::class)->seasonIsPast($this->archive))->toBeTrue();
 });
 
+it('keeps the selected notice year after acknowledgment from a list or record', function (bool $fromList) {
+    $notice = Unavailability::create(['organization_id' => $this->manager->organization_id,
+        'organization_membership_id' => $this->ranger->id, 'starts_at' => '2027-10-04T18:00:00Z',
+        'ends_at' => '2027-10-04T19:00:00Z', 'revision' => 1]);
+    $path = $this->admin.'/unavailability/'.($fromList ? 'new' : $notice->id);
+    $response = $this->get($path.'?year=2027')->assertOk()->assertSee($notice->id);
+    expect($response->getContent())->toMatch('/formaction="[^"]*\/acknowledge\?[^"]*year=2027/');
+
+    $this->post($path.'/acknowledge?year=2027', ['notice_id' => $notice->id, 'notice_revision' => 1])
+        ->assertRedirect($path.($fromList ? '?year=2027' : ''));
+    $this->get($path.($fromList ? '?year=2027' : ''))->assertOk()
+        ->assertSee('Year: 2027')->assertSee($notice->id)->assertSee('Acknowledged as seen');
+    expect($notice->fresh()->revision)->toBe(1);
+    $this->assertDatabaseCount('unavailability_acknowledgments', 1);
+    $this->get($this->admin.'/unavailability/new?year=2026')->assertOk()->assertDontSee($notice->id);
+})->with([true, false]);
+
 it('offers historical notice years even when no season was configured for that year', function () {
     Unavailability::create(['organization_id' => $this->manager->organization_id,
         'organization_membership_id' => $this->ranger->id, 'starts_at' => '2021-01-01T07:00:00Z', 'ends_at' => '2021-01-01T10:00:00Z', 'revision' => 1]);

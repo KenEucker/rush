@@ -25,7 +25,7 @@
             @unless(app(\App\Orchid\ManagementYear::class)->context()['readOnly'])
                 <a href="{{ app(\App\Orchid\ManagementYear::class)->route('platform.unavailability', [$organization->id, $notice['id']]) }}">Edit range</a>
                 @unless($notice['acknowledged_at'])
-                    {!! \Orchid\Screen\Actions\Button::make('Acknowledge as seen')->method('acknowledge', ['notice_id' => $notice['id'], 'notice_revision' => $notice['revision']])->novalidate() !!}
+                    {!! \Orchid\Screen\Actions\Button::make('Acknowledge as seen')->method('acknowledge', ['notice_id' => $notice['id'], 'notice_revision' => $notice['revision'], 'year' => app(\App\Orchid\ManagementYear::class)->context()['year']])->novalidate() !!}
                 @endunless
             @endunless
         </section>

@@ -134,6 +134,14 @@ Common aliases are available in the root `package.json`:
 | Scheduler | `server:schedule:list`, `server:schedule:run`, `server:schedule:work`, `server:schedule:clear-cache`, `server:schedule:interrupt` |
 | Operations | `server:about`, `server:config:show`, `server:route:list`, `server:event:list`, `server:up`, `server:down` |
 
+Additional helpers include `server:serve`, `server:tinker`, `server:env`,
+`server:queue:listen`, `server:queue:monitor`, `server:queue:forget`,
+`server:queue:clear`, `server:queue:prune-failed`, and `server:queue:prune-batches`.
+Queue clear/forget/prune commands remove jobs or diagnostic history; use `-- --help`
+to inspect their arguments before use. The `docker:` counterparts use the same
+container runner as the other helpers. Interactive Tinker in Docker should use
+the TTY-enabled `docker:exec` example below.
+
 Pass extra arguments after `--`, such as `npm run server:migrate -- --pretend`
 or `npm run server:queue:retry -- <job-id>`. These run locally, using `server/.env`.
 
@@ -241,7 +249,17 @@ npm run docker:dev:up                                # rebuild PHP dependencies/
 ```
 
 Use the `docker:dev:*` helpers while working in this mode. `docker:dev:down` stops
-the development stack without deleting volumes. To return to built images:
+the development stack without deleting volumes.
+
+Development Artisan aliases include `docker:dev:migrate`,
+`docker:dev:migrate:status`, `docker:dev:migrate:rollback`, `docker:dev:db:seed`,
+`docker:dev:cache:clear`, `docker:dev:config:clear`, `docker:dev:route:clear`,
+`docker:dev:view:clear`, `docker:dev:optimize:clear`, and `docker:dev:queue:restart`.
+Use `npm run docker:dev:help -- migrate` for command options or
+`npm run docker:dev:artisan -- <command> [options]` for any other Artisan command.
+These aliases use the development Compose override and never add `--force`.
+
+To return to built images:
 
 ```sh
 npm run docker:dev:down

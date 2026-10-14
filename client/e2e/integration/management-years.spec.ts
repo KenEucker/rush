@@ -107,7 +107,16 @@ test('Management browses past starting years read-only and keeps browser tabs in
   await expect(yearLabel).toContainText(`Year: ${currentYear + 1}`);
   await expect(yearMenu).not.toBeVisible();
   await expect(page.getByText(/Read-only archive/)).toHaveCount(0);
-  await expect(
-    page.getByRole('link', { name: 'Create a season to configure events' }),
-  ).toBeVisible();
+  // Other configuration journeys may already have created a season next year.
+  // Creating another must remain available with the selected year preserved.
+  if (!(await menu.isVisible())) await page.locator('.header-toggler').click();
+  await menu.getByRole('link', { name: 'Seasons and phases', exact: true }).click();
+  const create = menu.locator('#menu-seasons-and-phases').getByRole('link', {
+    name: /Create season/,
+  });
+  await expect(create).toBeVisible();
+  await expect(create).toHaveAttribute(
+    'href',
+    new RegExp(`/seasons/new\\?year=${currentYear + 1}$`),
+  );
 });
