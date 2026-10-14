@@ -118,9 +118,7 @@ test('Management opens Orchid on the same origin and profile reads/writes enforc
   await signIn(page, managerEmail);
   await page.getByRole('link', { name: 'Open administration', exact: true }).click();
   await expect(page).toHaveURL('http://127.0.0.1:9187/admin/main');
-  await expect(
-    page.getByText('You are signed in with an active Management membership.'),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^\d{4} overview$/, exact: true })).toBeVisible();
   const orchidCss = page.locator('link[rel="stylesheet"]').first();
   const asset = await orchidCss.getAttribute('href');
   expect(asset).toBeTruthy();

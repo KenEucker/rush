@@ -55,9 +55,7 @@ test('Management configures a one-off paid meeting, reviews staffing and retains
     ).status(),
   ).toBe(201);
   await page.goto('/admin/main');
-  await expect(
-    page.getByRole('heading', { name: 'Events and attendance', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^\d{4} overview$/, exact: true })).toBeVisible();
   const menu = page.locator('#headerMenuCollapse');
   async function openMenuSection(name: string, slug: string) {
     if (!(await menu.isVisible())) await page.locator('.header-toggler').click();
@@ -134,9 +132,14 @@ test('Management configures a one-off paid meeting, reviews staffing and retains
   const control = attendees.locator('..').locator('.ts-control');
   await control.locator('input').fill('Casey');
   await page.locator('.ts-dropdown .option').filter({ hasText: 'Casey Brooks' }).click();
+  await control.locator('input').press('Escape');
+  await control.locator('input').press('Tab');
   await page
     .getByLabel('Reason for event change', { exact: false })
     .fill('Configure one paid meeting');
+  await expect(page.getByLabel('Reason for event change', { exact: false })).toHaveValue(
+    'Configure one paid meeting',
+  );
   await page.getByRole('button', { name: 'Save event and attendance', exact: true }).click();
   await expect(page.getByText(/must not be greater than 100/).first()).toBeVisible();
   await expect(page.getByLabel('Event name', { exact: false })).toHaveValue('Monday Meeting');

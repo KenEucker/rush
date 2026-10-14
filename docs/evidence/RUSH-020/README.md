@@ -181,3 +181,16 @@ tests. Client lint and TypeScript passed. Overview screenshots:
 Final overview screenshot run: 2 desktop/mobile tests passed after ensuring
 navigation completed and keeping the mobile table horizontally scrollable.
 Screenshots were visually reviewed.
+
+## CI overview assertion repair
+
+CI run 38492864679 failed four E2E cases: auth and events on desktop/mobile
+still expected removed home-page copy. Both now assert the selected-year overview.
+The mobile event workflow also explicitly closes the attendee dropdown and checks
+the reason field before submitting, preventing a focus race from leaving it empty.
+
+Client lint passed. The first full local run passed 42/44: the mobile event focus
+race failed, and an overlapping rerun disrupted sync trace output. A standalone
+sync rerun then encountered conflict fixtures left by that suite. After resetting
+only the disposable rush-ci database, the final auth/events/sync-observability
+run passed all 10 desktop/mobile tests. No application behavior changes.
